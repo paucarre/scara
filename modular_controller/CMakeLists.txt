@@ -1,0 +1,6 @@
+cmake_minimum_required(VERSION 3.10)
+project(PROTOCOL)
+find_package(pybind11 REQUIRED)
+set(CMAKE_CXX_STANDARD 14)
+add_library (protocol protocol.cpp protocol.hpp)
+add_executable(tests tests.cpp protocol.cpp protocol.hpp)

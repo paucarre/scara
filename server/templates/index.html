@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Scara</title>
+	<link rel="stylesheet" href="/static/style.css">
+	<script src="//cdnjs.cloudflare.com/ajax/libs/socket.io/2.2.0/socket.io.js" integrity="sha256-yr4fRk/GU1ehYJPAs8P4JlTgu0Hdsp4ZKrx8bDEDC3I=" crossorigin="anonymous"></script>
+	<script src="https://code.jquery.com/jquery-3.4.1.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
+</head>
+
+<body>
+	<div class="wrapper">
+		<div id="kinematics" class="box">
+			
+		</div>
+		<div class="box">
+			<img id="camera" /> 
+		</div>
+			<div id="current_state" class="form_wrapper">
+				<div class="form_box bold"></div>
+				<div class="bold">Current State</div>
+				<div class="form_box">Angle 1:</div>
+				<div id="current_state_angle_1" class="form_box"></div>
+				<div class="form_box">Angle 2:</div>
+				<div id="current_state_angle_2" class="form_box"></div>
+				<div class="form_box">Angle 3:</div>
+				<div id="current_state_angle_3" class="form_box"></div>
+				<div class="form_box">Height:</div>
+				<div id="current_state_linear_1" class="form_box"></div>
+			</div>
+			<div id="target_state" class="form_wrapper">
+				<div class="form_box bold"></div>
+				<div class="bold">Target State</div>
+				<div class="form_box">Angle 1:</div>
+				<div id="target_state_angle_1" class="form_box"></div>
+				<div class="form_box">Angle 2:</div>
+				<div id="target_state_angle_2" class="form_box"></div>
+				<div class="form_box">Angle 3:</div>
+				<div id="target_state_angle_3" class="form_box"></div>
+				<div class="form_box">Height:</div>
+				<div id="target_state_linear_1" class="form_box"></div>
+			</div>
+			<div id="tacker_state" class="form_wrapper">
+				<div class="form_box bold"></div>
+				<div class="bold">Tracker State</div>
+				<div class="form_box">X:</div>
+				<div id="tracker_state_x" class="form_box"></div>
+				<div class="form_box">Y:</div>
+				<div id="tracker_state_y" class="form_box"></div>
+				<div class="form_box">Z:</div>
+				<div id="tracker_state_z" class="form_box"></div>
+				<div class="form_box">dX:</div>
+				<div id="tracker_state_dx" class="form_box"></div>
+				<div class="form_box">dY:</div>
+				<div id="tracker_state_dy" class="form_box"></div>
+			</div>
+			<form id="write_target_state_form" class="form_wrapper">
+					<div class="form_box bold"></div>
+					<div class="form_box bold">Target State Write</div>
+					<div class="form_box" ></div>
+					<div class="form_box" id="info_target_state_write"></div>
+
+					<div class="form_box">Angle 1:</div>
+					<div class="form_box"><input type="number" name="angle_1" step="any" width="4em" size="4" maxlength="4"></div>
+					<div class="form_box">Angle 2:</div>
+					<div class="form_box"><input type="number" name="angle_2" step="any" width="4em" size="4"></div>
+					<div class="form_box">Angle 3:</div>
+					<div class="form_box"><input type="number" name="angle_3" step="any" width="4em" size="4"></div>
+					<div class="form_box">Height:</div>
+					<div class="form_box"><input type="number" name="linear_1" step="any" width="4em" size="4"></div>
+					<div class="form_box"></div>
+					<div class="form_box"><input type="submit" name="send"></div>
+			</form>
+			<form id="inverse_kinematics_form" class="form_wrapper">
+				<div class="form_box bold"></div>
+				<div class="form_box bold">Target Position Write</div>
+				<div class="form_box">X:</div>
+				<div class="form_box"><input type="number" name="x" value="0.0" step="any"></div>
+				<div class="form_box">Y:</div>
+				<div class="form_box"><input type="number" name="y" value="400.0" step="any"></div>
+				<div class="form_box">Z:</div>
+				<div class="form_box"><input type="number" name="z" value="250.0" step="any"></div>
+				<div class="form_box">dX:</div>
+				<div class="form_box"><input type="number" name="dx" value="1.0" step="any"></div>
+				<div class="form_box">dY:</div>
+				<div class="form_box"><input type="number" name="dy" value="1.0" step="any"></div>
+				<div class="form_box"></div>
+				<div class="form_box"><input type="submit" name="send"></div>
+			</form>
+	</div>
+<script src="{{ url_for('static',filename='main.js') }}"></script>
+</body>
+
+
+
+</html>

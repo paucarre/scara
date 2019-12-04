@@ -1,0 +1,40 @@
+
+.wrapper {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr;
+    grid-gap: 5px;
+    color: rgb(39, 39, 39);
+}
+
+.form_wrapper {
+    grid-column: span 1;
+    grid-row: 2;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-gap: 2px;
+    color: rgb(39, 39, 39);
+
+    background-color: rgb(230, 230, 230);
+    border-color: rgb(61, 61, 61);;
+    border-style: solid;
+    border-radius: 5px;
+}
+
+.form_box {
+    background-color: rgb(230, 230, 230);
+    padding: 2px;
+}
+
+.box {
+    grid-column: span 3;
+    background-color: rgb(230, 230, 230);
+    border-color: rgb(39, 39, 39);
+    border-style: solid;
+    border-radius: 5px;
+    padding: 5px;
+    font-size: 150%;
+}
+
+.bold {
+    font-weight: bold;
+}
