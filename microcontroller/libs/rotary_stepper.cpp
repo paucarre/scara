@@ -8,14 +8,19 @@ void RotaryStepper::setup() {
 }
 
 void RotaryStepper::apply_direction(bool rotate_clockwise) {
+  direction_pin_state_is_clockwise = rotate_clockwise;
   //Serial.println( "rotate_clockwise:" + String(rotate_clockwise) + " --- is_clockwise : " + String(this->dir_high_is_clockwise) );
-  if( (this->dir_high_is_clockwise && rotate_clockwise) || ((!rotate_clockwise) && (!this->dir_high_is_clockwise)) ) {
-    Serial.println("rotary_stepper - Setting direction to High");
+  if( (this->dir_high_is_clockwise && direction_pin_state_is_clockwise) || ((!direction_pin_state_is_clockwise) && (!this->dir_high_is_clockwise)) ) {
+    //Serial.println("rotary_stepper - Setting direction to High");
     digitalWrite(this->direction_pin, HIGH);
   } else {
-    Serial.println("rotary_stepper - Setting direction to LOW");
+    //Serial.println("rotary_stepper - Setting direction to LOW");
     digitalWrite(this->direction_pin, LOW);
   }
+}
+
+void RotaryStepper::set_current_step_as_zero() {
+  current_step = 0;
 }
 
 void RotaryStepper::step() {
@@ -23,4 +28,9 @@ void RotaryStepper::step() {
   delayMicroseconds(50);
   digitalWrite(this->step_pin, LOW);
   delayMicroseconds(50);
+  if(direction_pin_state_is_clockwise){
+    current_step ++;
+  } else {
+    current_step --;
+  }
 }

@@ -1,7 +1,7 @@
 #include <Wire.h>
 #include <math.h>
 #include <Adafruit_ADS1015.h>
-#include "rotary_stepper.hpp"
+#include <rotary_stepper.hpp>
 
 const uint16_t SAMPLES = 1;
 const uint16_t STEPPER_STEPS = 25000;
@@ -92,8 +92,8 @@ void loop(void)
     double signal_0_wave = transform_to_waveform(sensor_0, sensor_0_max, sensor_0_min);
     double signal_1_wave = transform_to_waveform(sensor_1, sensor_1_max, sensor_1_min);
     float angle = atan2(signal_0_wave, signal_1_wave) + (M_PI);
-    zero_angle = ( (int) ( (angle * STEPPER_STEPS) / (2. * M_PI) )) % STEPPER_STEPS;
-    //zero_angle = angle;
+    //zero_angle = ( (int) ( (angle * STEPPER_STEPS) / (2. * M_PI) )) % STEPPER_STEPS;
+    zero_angle = angle;
   }
   if(iteration % 100 == 0){    
     if(!max_min_finished) {
@@ -125,16 +125,16 @@ void loop(void)
      double signal_0_wave = transform_to_waveform(sensor_0, sensor_0_max, sensor_0_min);
      double signal_1_wave = transform_to_waveform(sensor_1, sensor_1_max, sensor_1_min);
      double angle = atan2(signal_0_wave, signal_1_wave) + (M_PI);
-     //angle = angle - zero_angle;
-     //if(angle < 0.0) {
-     // angle +=  2. * M_PI;
-     ///}
+     angle = angle - zero_angle;
+     if(angle < 0.0) {
+      angle +=  2. * M_PI;
+     }
      
      double singal_0_computed = sin(angle);
      double singal_1_computed = cos(angle);
      
 
-     double stepper_angle = (double)( ( (STEPPER_STEPS - iteration - (int) zero_angle) % STEPPER_STEPS ) * 2. * M_PI) / (double)STEPPER_STEPS;
+     double stepper_angle = (double)( ( (STEPPER_STEPS - iteration) % STEPPER_STEPS ) * 2. * M_PI) / (double)STEPPER_STEPS;
      double singal_0_stepper = sin(stepper_angle);
      double singal_1_stepper = cos(stepper_angle);
      if(!diff_finished){
@@ -149,14 +149,13 @@ void loop(void)
        // angle +=  2. * M_PI;
        //} 
      }
-      /*
-     double error = abs(angle - stepper_angle);
+          double error = abs(angle - stepper_angle);
      if(error >= (2. * M_PI) - 0.3){
       error -= 2. * M_PI;
      }
      Serial.println(error * 10);
-     */
-    
+     
+    /*
      Serial.print("angle");
      Serial.print(",");
      Serial.print("stepper_angle");
@@ -169,7 +168,7 @@ void loop(void)
      Serial.print(",");
      Serial.print(zero_angle);
      Serial.println("");
-     
+     */
       
      /*
      Serial.print("signal_0_wave");
