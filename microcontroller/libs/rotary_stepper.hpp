@@ -12,7 +12,7 @@ class RotaryStepper {
     bool dir_high_is_clockwise;
     bool direction_pin_state_is_clockwise;
     RotaryStepper(bool dir_high_is_clockwise_, int direction_pin_, int step_pin_):
-      dir_high_is_clockwise(dir_high_is_clockwise_), direction_pin(direction_pin_), step_pin(step_pin_), current_step(0), direction_pin_state_is_clockwise(false) {                 
+      dir_high_is_clockwise(dir_high_is_clockwise_), direction_pin(direction_pin_), step_pin(step_pin_), current_step(0), direction_pin_state_is_clockwise(dir_high_is_clockwise_) {                 
     }
     void setup();
     void step();
