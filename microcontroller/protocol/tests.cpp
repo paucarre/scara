@@ -4,8 +4,8 @@
 using namespace protocol;
 
 void message_generation_test(MessageType message_type) {
-    uint8_t data[0];
-    uint8_t message[message_type.get_message_size()];
+    const char data[0] = {};
+    char message[message_type.get_message_size()] = {0};
     MessageFactory::write_message_data(message_type, data, message);
     assert(message[0] == Parser::START_FLAG);
     assert(message[1] == message_type.get_label());
@@ -16,8 +16,8 @@ void message_generation_test(MessageType message_type) {
 }
 
 void messag_parsing_test(MessageType message_type) {
-    uint8_t message[message_type.get_message_size()];
-    uint8_t data[0];
+    char message[message_type.get_message_size()] = {0};
+    const char data[0] = {};
     MessageFactory::write_message_data(message_type, data, message);
     ParsingResult parsing_result;
     Parser parser;
@@ -36,8 +36,8 @@ void messag_parsing_test(MessageType message_type) {
 }
 
 void messag_parsing_with_corrupted_checksum_test(MessageType message_type) {
-    uint8_t message[message_type.get_message_size()];
-    uint8_t data[0];
+    char message[message_type.get_message_size()] = {0};
+    const char data[0] = {};
     MessageFactory::write_message_data(message_type, data, message);
     ParsingResult parsing_result;
     Parser parser;
@@ -54,8 +54,8 @@ void messag_parsing_with_corrupted_checksum_test(MessageType message_type) {
 }
 
 void messag_parsing_with_corrupted_end_flag_test(MessageType message_type) {
-    uint8_t message[message_type.get_message_size()];
-    uint8_t data[0];
+    char message[message_type.get_message_size()] = {0};
+    const char data[0] = {};
     MessageFactory::write_message_data(message_type, data, message);
     ParsingResult parsing_result;
     Parser parser;
@@ -80,7 +80,7 @@ void message_tests(MessageType message_type) {
 }
 
 int main(int argc, char **argv) {
-    message_tests(HOME_MESSAGE);
-    message_tests(HOME_RETURN_MESSAGE);
+    message_tests(HOME_MESSAGE_TYPE);
+    message_tests(HOME_RETURN_MESSAGE_TYPE);
     return 0;
 }

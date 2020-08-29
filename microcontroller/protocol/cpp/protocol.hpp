@@ -51,10 +51,10 @@ namespace protocol {
     static const uint8_t MAXIMUM_DATA_PLAYLOAD_BYTES = 20;
     static const uint8_t MESSAGE_OVERHEAD_IN_BYTES = 4; // IT'S 4 BECAUSE WE NEED START + TYPE + CHECKSUM + END
     static const uint8_t MAXIMUM_MESSAGE_PLAYLOAD_BYTES = MAXIMUM_DATA_PLAYLOAD_BYTES + MESSAGE_OVERHEAD_IN_BYTES;
-    static const MessageType HOME_MESSAGE = MessageType(0x01, 0);
-    static const MessageType HOME_RETURN_MESSAGE = MessageType(0x02, 0);
+    static const MessageType HOME_MESSAGE_TYPE = MessageType(0x01, 0);
+    static const MessageType HOME_RETURN_MESSAGE_TYPE = MessageType(0x02, 0);
     static const uint8_t NUMBER_OF_MESSAGES = 2;
-    static MessageType MESSAGES[NUMBER_OF_MESSAGES] = { HOME_MESSAGE, HOME_RETURN_MESSAGE};
+    static MessageType MESSAGES[NUMBER_OF_MESSAGES] = { HOME_MESSAGE_TYPE, HOME_RETURN_MESSAGE_TYPE};
 
     enum class ParsingError {
         NO_ERROR,
@@ -99,10 +99,10 @@ namespace protocol {
             ParsingState state = ParsingState::FINDING_START_FLAG;
 
         public:
-            static const uint8_t START_FLAG = 0xAA;
-            static const uint8_t ESCAPE_FLAG = 0x00;
-            static const uint8_t END_FLAG = 0xFF;
-            static const uint8_t constexpr FLAGS[] = { START_FLAG, END_FLAG, ESCAPE_FLAG };
+            static const char START_FLAG = 0xAA;
+            static const char ESCAPE_FLAG = 0x00;
+            static const char END_FLAG = 0xFF;
+            static const char constexpr FLAGS[] = { START_FLAG, END_FLAG, ESCAPE_FLAG };
 
             Parser();
             ParsingResult parse_byte(uint8_t data);
@@ -114,22 +114,28 @@ namespace protocol {
     class MessageFactory {
 
         public:
-            static uint8_t make_checksum(uint8_t* data, uint8_t lenght);
-            static void fill_message_data(uint8_t body[], MessageType message_type, uint8_t* message_out);
-            static void write_message_data(MessageType message_type, uint8_t* data, uint8_t* message_out);
+            static char make_checksum(uint8_t* data, uint8_t lenght);
+            static void fill_message_data(uint8_t body[], MessageType message_type, char* message_out);
+            static void write_message_data(MessageType message_type, const char* data, char* message_out);
     };
 
     class Message {
         private:
             MessageType message_type;
-            uint8_t message[MAXIMUM_MESSAGE_PLAYLOAD_BYTES];
 
         public:
-            Message(MessageType message_type_, uint8_t *data_);
+            char message[MAXIMUM_MESSAGE_PLAYLOAD_BYTES] = {0};
+            Message(MessageType message_type_, const char* data_);
             Message(MessageType message_type_);
             uint8_t get_message_size();
-            uint8_t get_byte_at(uint8_t byte_index);
+            char get_byte_at(uint8_t byte_index);
+            const char* get_bytes();
+            static Message make_home_message(){
+                const char data[0] = {};
+                return Message(HOME_MESSAGE_TYPE, data);
+            }
     };
 
 
 }
+

@@ -11,7 +11,7 @@ namespace protocol {
         return (this->data_lenght) + 1;
     }
 
-    uint8_t MessageFactory::make_checksum(uint8_t* data, uint8_t lenght) {
+    char MessageFactory::make_checksum(uint8_t* data, uint8_t lenght) {
         uint8_t checksum = 0;
         for(uint8_t i = 0; i < lenght; i++){
             checksum = checksum ^ data[i];
@@ -19,9 +19,9 @@ namespace protocol {
         return checksum;
     }
 
-    void MessageFactory::fill_message_data(uint8_t body[], MessageType message_type, uint8_t* message_out) {
+    void MessageFactory::fill_message_data(uint8_t body[], MessageType message_type, char* message_out) {
         uint8_t body_size = message_type.get_body_size();
-        uint8_t checksum = make_checksum(body, body_size);
+        char checksum = make_checksum(body, body_size);
         uint8_t message_size = message_type.get_message_size();
         message_out[0] = Parser::START_FLAG;
         message_out[message_size - 2] = checksum;
@@ -31,7 +31,7 @@ namespace protocol {
         }
     }
 
-    void MessageFactory::write_message_data(MessageType message_type, uint8_t* data, uint8_t* message_out) {
+    void MessageFactory::write_message_data(MessageType message_type, const char* data, char* message_out) {
         uint8_t body_size = message_type.get_body_size();
         uint8_t body[body_size];
         body[0] = message_type.get_label();
@@ -114,15 +114,18 @@ namespace protocol {
     }
 
     Message::Message(MessageType message_type_ ): message_type(message_type_) {
-        uint8_t empty_data[0];
+        const char empty_data[0] = {};
         protocol::MessageFactory::write_message_data(message_type, empty_data, message);
     }
 
-    Message::Message(MessageType message_type_ , uint8_t* data_ ): message_type(message_type_) {
+    Message::Message(MessageType message_type_, const char* data_ ): message_type(message_type_) {
         protocol::MessageFactory::write_message_data(message_type, data_, message);
     }
 
     uint8_t Message::get_message_size() { return message_type.get_body_size(); }
-    uint8_t Message::get_byte_at(uint8_t byte_index) { return message[byte_index]; }
+    char Message::get_byte_at(uint8_t byte_index) { return message[byte_index]; }
+    const char* Message::get_bytes() {
+        return message;
+    }
 
 }
