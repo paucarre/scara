@@ -3,12 +3,11 @@
 namespace protocol {
 
     const uint8_t MessageType::get_message_size() {
-        // checksum, start, end and label
-        return data_lenght + 4;
+        return data_lenght + MESSAGE_OVERHEAD_IN_BYTES;
     }
 
     const uint8_t MessageType::get_body_size() {
-        // label
+        // the body is data + label and the label occupies just one byte
         return (this->data_lenght) + 1;
     }
 
@@ -19,7 +18,6 @@ namespace protocol {
         }
         return checksum;
     }
-
 
     void MessageFactory::fill_message_data(uint8_t body[], MessageType message_type, uint8_t* message_out) {
         uint8_t body_size = message_type.get_body_size();
@@ -33,11 +31,11 @@ namespace protocol {
         }
     }
 
-    void MessageFactory::get_message_data(MessageType message_type, uint8_t* data, uint8_t* message_out) {
+    void MessageFactory::write_message_data(MessageType message_type, uint8_t* data, uint8_t* message_out) {
         uint8_t body_size = message_type.get_body_size();
         uint8_t body[body_size];
         body[0] = message_type.get_label();
-        for(uint8_t i = 0; i < message_type.get_data_lenght();i++){
+        for(uint8_t i = 0; i < message_type.get_data_lenght(); i++){
             body[i + 1] = data[i];
         }
         fill_message_data(body, message_type, message_out);
@@ -114,5 +112,17 @@ namespace protocol {
         }
         return ParsingResult(state, parsing_error, message_type, parsed_data, false);
     }
+
+    Message::Message(MessageType message_type_ ): message_type(message_type_) {
+        uint8_t empty_data[0];
+        protocol::MessageFactory::write_message_data(message_type, empty_data, message);
+    }
+
+    Message::Message(MessageType message_type_ , uint8_t* data_ ): message_type(message_type_) {
+        protocol::MessageFactory::write_message_data(message_type, data_, message);
+    }
+
+    uint8_t Message::get_message_size() { return message_type.get_body_size(); }
+    uint8_t Message::get_byte_at(uint8_t byte_index) { return message[byte_index]; }
 
 }

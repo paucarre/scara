@@ -1,0 +1,1 @@
+/home/rusalka/miniconda3/envs/scara/lib/python3.8/site-packages/protocol.cpython-38-x86_64-linux-gnu.so

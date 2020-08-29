@@ -24,6 +24,7 @@ SemaphoreHandle_t mutex;
 volatile bool do_homing = false;
 
 void setup() {
+  Serial2.begin(9600); // Note that Serial2 is used for communication between microcontroller and host cpu
   rotary_stepper.setup();
   rotary_homer.setup(rotary_stepper);
   Serial.begin(9600);
@@ -59,19 +60,8 @@ void control( void * pvParameters ){
   }
 }
 
-/*
-void message_generation_test(protocol::MessageType message_type) {
-    uint8_t data[0];
-    uint8_t message[message_type.get_message_size()];
-    protocol::MessageFactory::get_message_data(message_type, data, message);
-    assert(message[0] == protocol::Parser::START_FLAG);
-    assert(message[1] == message_type.get_label());
-    assert(message[2] == 0x00 ^ message_type.get_label());
-    assert(message[3] == protocol::Parser::END_FLAG);
-    assert(sizeof(message)/sizeof(*message) == 4);
-    std::cout << "SUCCESS -- MESSAGE GENERATION" << std::endl;
-}
-*/
+
+
 void communication( void * pvParameters ){
   esp_task_wdt_feed();
   const TickType_t xDelay = 1 / portTICK_PERIOD_MS;

@@ -11,8 +11,6 @@ endif()
 set(CMAKE_CXX_FLAGS "-O3")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
-set(PYTHON_LIBRARY_DIR "${CONDA_PREFIX}/lib/python3.8/site-packages")
-
 project(protocol)
 
 include_directories("${CMAKE_SOURCE_DIR}/cpp")

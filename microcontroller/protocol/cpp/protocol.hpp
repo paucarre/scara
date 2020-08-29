@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <iostream>
 
-namespace protocol {    
+namespace protocol {
 
     template <class T> class ptr_wrapper
     {
@@ -40,15 +40,17 @@ namespace protocol {
                 data_lenght(_lenght) {
             }
 
-            const uint8_t get_body_size();            
+            const uint8_t get_body_size();
             const uint8_t get_message_size();
             const uint8_t get_label() { return label; }
             const uint8_t get_data_lenght() { return data_lenght; }
 
     };
 
-    
+
     static const uint8_t MAXIMUM_DATA_PLAYLOAD_BYTES = 20;
+    static const uint8_t MESSAGE_OVERHEAD_IN_BYTES = 4; // IT'S 4 BECAUSE WE NEED START + TYPE + CHECKSUM + END
+    static const uint8_t MAXIMUM_MESSAGE_PLAYLOAD_BYTES = MAXIMUM_DATA_PLAYLOAD_BYTES + MESSAGE_OVERHEAD_IN_BYTES;
     static const MessageType HOME_MESSAGE = MessageType(0x01, 0);
     static const MessageType HOME_RETURN_MESSAGE = MessageType(0x02, 0);
     static const uint8_t NUMBER_OF_MESSAGES = 2;
@@ -89,16 +91,14 @@ namespace protocol {
     };
 
     class Parser {
-        protected:
+        private:
             ptr_wrapper<MessageType> message_type = nullptr;
-
-        public:
-            
             uint8_t parsed_data[MAXIMUM_DATA_PLAYLOAD_BYTES];
             uint8_t data_index;
             bool previous_data_was_escaped = false;
-            ParsingState state;
+            ParsingState state = ParsingState::FINDING_START_FLAG;
 
+        public:
             static const uint8_t START_FLAG = 0xAA;
             static const uint8_t ESCAPE_FLAG = 0x00;
             static const uint8_t END_FLAG = 0xFF;
@@ -108,6 +108,7 @@ namespace protocol {
             ParsingResult parse_byte(uint8_t data);
             ParsingError validate_checksum(uint8_t data);
             ptr_wrapper<MessageType> &get_message_type() { return message_type; }
+            ParsingState get_state() { return state; }
     };
 
     class MessageFactory {
@@ -115,7 +116,20 @@ namespace protocol {
         public:
             static uint8_t make_checksum(uint8_t* data, uint8_t lenght);
             static void fill_message_data(uint8_t body[], MessageType message_type, uint8_t* message_out);
-            static void get_message_data(MessageType message_type, uint8_t* data, uint8_t* message_out);
+            static void write_message_data(MessageType message_type, uint8_t* data, uint8_t* message_out);
     };
+
+    class Message {
+        private:
+            MessageType message_type;
+            uint8_t message[MAXIMUM_MESSAGE_PLAYLOAD_BYTES];
+
+        public:
+            Message(MessageType message_type_, uint8_t *data_);
+            Message(MessageType message_type_);
+            uint8_t get_message_size();
+            uint8_t get_byte_at(uint8_t byte_index);
+    };
+
 
 }
