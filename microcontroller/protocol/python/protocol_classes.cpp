@@ -33,7 +33,7 @@ void init_protocol(py::module &m) {
 
      py::class_<protocol::ParsingResult>(m, "ParsingResult")
           .def(py::init<protocol::ParsingState, protocol::ParsingError,
-               protocol::ptr_wrapper<protocol::MessageType>,  protocol::ptr_wrapper<uint8_t>, bool>())
+               protocol::ptr_wrapper<protocol::MessageType>,  protocol::ptr_wrapper<char>, bool>())
           .def("get_state", &protocol::ParsingResult::get_state)
           .def("get_parsing_error", &protocol::ParsingResult::get_parsing_error);
 

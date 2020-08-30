@@ -11,7 +11,7 @@ namespace protocol {
         return (this->data_lenght) + 1;
     }
 
-    char MessageFactory::make_checksum(uint8_t* data, uint8_t lenght) {
+    char MessageFactory::make_checksum(char* data, uint8_t lenght) {
         uint8_t checksum = 0;
         for(uint8_t i = 0; i < lenght; i++){
             checksum = checksum ^ data[i];
@@ -19,7 +19,7 @@ namespace protocol {
         return checksum;
     }
 
-    void MessageFactory::fill_message_data(uint8_t body[], MessageType message_type, char* message_out) {
+    void MessageFactory::fill_message_data(char body[], MessageType message_type, char* message_out) {
         uint8_t body_size = message_type.get_body_size();
         char checksum = make_checksum(body, body_size);
         uint8_t message_size = message_type.get_message_size();
@@ -33,7 +33,7 @@ namespace protocol {
 
     void MessageFactory::write_message_data(MessageType message_type, const char* data, char* message_out) {
         uint8_t body_size = message_type.get_body_size();
-        uint8_t body[body_size];
+        char body[body_size];
         body[0] = message_type.get_label();
         for(uint8_t i = 0; i < message_type.get_data_lenght(); i++){
             body[i + 1] = data[i];
@@ -58,7 +58,7 @@ namespace protocol {
         return parsing_error;
     }
 
-    ParsingResult Parser::parse_byte(uint8_t data) {
+    ParsingResult Parser::parse_byte(char data) {
         ParsingError parsing_error = ParsingError::NO_ERROR;
         switch(state) {
             case ParsingState::FINDING_START_FLAG:

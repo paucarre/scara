@@ -69,7 +69,7 @@ namespace protocol {
             ParsingState state = ParsingState::FINDING_START_FLAG;
             ParsingError parsing_error = ParsingError::NO_ERROR;
             ptr_wrapper<MessageType> message_type = nullptr;
-            ptr_wrapper<uint8_t> data = nullptr;
+            ptr_wrapper<char> data = nullptr;
             bool is_parsed = false;
 
         public:
@@ -78,14 +78,14 @@ namespace protocol {
             }
 
             ParsingResult(ParsingState _state, ParsingError _parsing_error,
-                ptr_wrapper<MessageType> _message_type, ptr_wrapper<uint8_t> _data, bool _is_parsed):
+                ptr_wrapper<MessageType> _message_type, ptr_wrapper<char> _data, bool _is_parsed):
                 state(_state), parsing_error(_parsing_error), message_type(_message_type), data(_data), is_parsed(_is_parsed) {
             }
 
             ParsingState &get_state() { return state; }
             ParsingError &get_parsing_error() { return parsing_error; }
             ptr_wrapper<MessageType> &get_message_type() { return message_type; }
-            ptr_wrapper<uint8_t> &get_data() { return data; }
+            ptr_wrapper<char> &get_data() { return data; }
             bool &get_is_parsed() { return is_parsed; }
 
     };
@@ -93,19 +93,19 @@ namespace protocol {
     class Parser {
         private:
             ptr_wrapper<MessageType> message_type = nullptr;
-            uint8_t parsed_data[MAXIMUM_DATA_PLAYLOAD_BYTES];
+            char parsed_data[MAXIMUM_DATA_PLAYLOAD_BYTES];
             uint8_t data_index;
             bool previous_data_was_escaped = false;
             ParsingState state = ParsingState::FINDING_START_FLAG;
 
         public:
             static const char START_FLAG = 0xAA;
-            static const char ESCAPE_FLAG = 0x00;
+            static const char ESCAPE_FLAG = 0xBB;
             static const char END_FLAG = 0xFF;
             static const char constexpr FLAGS[] = { START_FLAG, END_FLAG, ESCAPE_FLAG };
 
             Parser();
-            ParsingResult parse_byte(uint8_t data);
+            ParsingResult parse_byte(char data);
             ParsingError validate_checksum(uint8_t data);
             ptr_wrapper<MessageType> &get_message_type() { return message_type; }
             ParsingState get_state() { return state; }
@@ -114,8 +114,8 @@ namespace protocol {
     class MessageFactory {
 
         public:
-            static char make_checksum(uint8_t* data, uint8_t lenght);
-            static void fill_message_data(uint8_t body[], MessageType message_type, char* message_out);
+            static char make_checksum(char* data, uint8_t lenght);
+            static void fill_message_data(char body[], MessageType message_type, char* message_out);
             static void write_message_data(MessageType message_type, const char* data, char* message_out);
     };
 
