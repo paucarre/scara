@@ -16,12 +16,14 @@
 
 // axis 1
 RotaryStepper rotary_stepper(false, 27, 26);
- 
+
 RotaryHomer rotary_homer(CENTER_MAGNETIC_SENSOR_PIN, LEFT_MAGNETIC_SENSOR_PIN, RIGH_MAGNETIC_SENSOR_PIN);
 
 
 SemaphoreHandle_t mutex;
 volatile bool do_homing = false;
+
+protocol::Parser parser;
 
 void setup() {
   Serial2.begin(9600); // Note that Serial2 is used for communication between microcontroller and host cpu
@@ -29,11 +31,11 @@ void setup() {
   rotary_homer.setup(rotary_stepper);
   Serial.begin(9600);
   mutex = xSemaphoreCreateMutex();
-  
-  xTaskCreatePinnedToCore(communication, "communication", 10000, NULL, 1, NULL,  1); 
-  delay(1000); 
-  xTaskCreatePinnedToCore(control, "control", 10000, NULL, 2, NULL,  0); 
-  delay(1000); 
+
+  xTaskCreatePinnedToCore(communication, "communication", 10000, NULL, 1, NULL,  1);
+  delay(1000);
+  xTaskCreatePinnedToCore(control, "control", 10000, NULL, 2, NULL,  0);
+  delay(1000);
 }
 
 void loop() {
@@ -45,15 +47,15 @@ void control( void * pvParameters ){
   int step = 0;
   for(;;){
     if(xSemaphoreTake(mutex, 10) == pdTRUE) {
-      if(do_homing){        
+      if(do_homing){
         rotary_homer.loop(rotary_stepper);
       }
       xSemaphoreGive(mutex);
-    }    
+    }
     esp_task_wdt_feed();
     step++;
     if(step > 4){
-      vTaskDelay(xDelay);  
+      vTaskDelay(xDelay);
       step = 0;
     }
     //taskYIELD();
@@ -61,13 +63,25 @@ void control( void * pvParameters ){
 }
 
 
+//ParsingResult parsing_result;
+//assert(parser.get_state() == ParsingState::FINDING_START_FLAG);
+parsing_result = parser.parse_byte(message[0]);
 
 void communication( void * pvParameters ){
   esp_task_wdt_feed();
   const TickType_t xDelay = 1 / portTICK_PERIOD_MS;
   for(;;){
-    if(xSemaphoreTake(mutex, 10) == pdTRUE) {      
-      if(!do_homing) {        
+    char received_byte = Serial2.read();
+    ParsingResult parsing_result = parser.parse_byte(received_byte);
+    if(parsing_result.get_is_parsed()){
+      switch(parsing_result.get_state()) {
+        case
+
+      }
+    }
+
+    if(xSemaphoreTake(mutex, 10) == pdTRUE) {
+      if(!do_homing) {
         do_homing = true;
       }
       xSemaphoreGive(mutex);

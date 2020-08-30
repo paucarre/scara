@@ -28,13 +28,12 @@ void init_protocol(py::module &m) {
         .value("CHECKSUM_VALIDATION_ERROR", protocol::ParsingError::CHECKSUM_VALIDATION_ERROR)
         .value("END_FLAG_NOT_FOUND", protocol::ParsingError::END_FLAG_NOT_FOUND);
 
-     py::class_<protocol::ptr_wrapper<protocol::MessageType>>(m, "MessageTypePtr")
-          .def("get", &protocol::ptr_wrapper<protocol::MessageType>::get);
-
      py::class_<protocol::ParsingResult>(m, "ParsingResult")
           .def(py::init<protocol::ParsingState, protocol::ParsingError,
                protocol::ptr_wrapper<protocol::MessageType>,  protocol::ptr_wrapper<char>, bool>())
           .def("get_state", &protocol::ParsingResult::get_state)
+          .def("get_message_type", &protocol::ParsingResult::get_message_type)
+          .def("is_parsed", &protocol::ParsingResult::get_is_parsed)
           .def("get_parsing_error", &protocol::ParsingResult::get_parsing_error);
 
      py::class_<protocol::Message>(m, "Message")
@@ -46,5 +45,19 @@ void init_protocol(py::module &m) {
                return py::bytes(message_as_string);
           })
           .def_static("make_home_message", &protocol::Message::make_home_message);
+
+     py::class_<protocol::Parser>(m, "Parser")
+          .def(py::init<>())
+          .def("parse_bytes", [](protocol::Parser parser, py::bytes message_bytes) {
+               std::string message_string = message_bytes;
+               char* data = message_string.data();
+               uint32_t length = message_string.length();
+               protocol::ParsingResult parse_result;
+               for(uint32_t idx = 0; idx < length; idx++){
+                    parse_result = parser.parse_byte(data[idx]);
+               }
+               return parse_result;
+          })
+          .def("get_message_type", &protocol::Parser::get_message_type);
 
 }
