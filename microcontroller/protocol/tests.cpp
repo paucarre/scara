@@ -19,19 +19,20 @@ void messag_parsing_test(MessageType message_type) {
     char message[message_type.get_message_size()] = {0};
     const char data[0] = {};
     MessageFactory::write_message_data(message_type, data, message);
-    ParsingResult parsing_result;
     Parser parser;
     assert(parser.get_state() == ParsingState::FINDING_START_FLAG);
-    parsing_result = parser.parse_byte(message[0]);
+    ParsingResult parsing_result1 = parser.parse_byte(message[0]);
     assert(parser.get_state() == ParsingState::FINDING_MESSAGE_LABEL);
-    parsing_result = parser.parse_byte(message[1]);
+    ParsingResult parsing_result2 = parser.parse_byte(message[1]);
     assert(parser.get_state() == ParsingState::PARSING_MESSAGE);
-    parsing_result = parser.parse_byte(message[2]);
+    ParsingResult parsing_result3 = parser.parse_byte(message[2]);
     assert(parser.get_state() == ParsingState::FINDING_END_FLAG);
-    parsing_result = parser.parse_byte(message[3]);
+    ParsingResult parsing_result4 = parser.parse_byte(message[3]);
     assert(parser.get_state() == ParsingState::FINDING_START_FLAG);
-    assert(parsing_result.get_message_type()->get_label() == message_type.get_label());
-    assert(parsing_result.get_is_parsed());
+    assert(parsing_result4.get_message().get_message_type().get_label() != UNDEFINED_MESSAGE_TYPE.get_label());
+    Message message_parsed = parsing_result4.get_message();
+    assert(message_parsed.get_message_type().get_label() == message_type.get_label());
+    assert(parsing_result4.get_is_parsed());
     std::cout << "SUCCESS -- MESSAGE PARSING" << std::endl;
 }
 
@@ -39,15 +40,14 @@ void messag_parsing_with_corrupted_checksum_test(MessageType message_type) {
     char message[message_type.get_message_size()] = {0};
     const char data[0] = {};
     MessageFactory::write_message_data(message_type, data, message);
-    ParsingResult parsing_result;
     Parser parser;
     assert(parser.get_state() == ParsingState::FINDING_START_FLAG);
-    parsing_result = parser.parse_byte(message[0]);
+    ParsingResult parsing_result1 = parser.parse_byte(message[0]);
     assert(parser.get_state() == ParsingState::FINDING_MESSAGE_LABEL);
-    parsing_result = parser.parse_byte(message[1]);
+    ParsingResult parsing_result2 = parser.parse_byte(message[1]);
     assert(parser.get_state() == ParsingState::PARSING_MESSAGE);
-    parsing_result = parser.parse_byte(0xFF);
-    assert(parsing_result.get_parsing_error() == ParsingError::CHECKSUM_VALIDATION_ERROR);
+    ParsingResult parsing_result3 = parser.parse_byte(0xFF);
+    assert(parsing_result3.get_parsing_error() == ParsingError::CHECKSUM_VALIDATION_ERROR);
     assert(parser.get_state() == ParsingState::FINDING_START_FLAG);
     std::cout << "SUCCESS -- MESSAGE PARSING WITH CORRUPTED CHECKSUM" << std::endl;
 
@@ -57,17 +57,16 @@ void messag_parsing_with_corrupted_end_flag_test(MessageType message_type) {
     char message[message_type.get_message_size()] = {0};
     const char data[0] = {};
     MessageFactory::write_message_data(message_type, data, message);
-    ParsingResult parsing_result;
     Parser parser;
     assert(parser.get_state() == ParsingState::FINDING_START_FLAG);
-    parsing_result = parser.parse_byte(message[0]);
+    ParsingResult parsing_result1 = parser.parse_byte(message[0]);
     assert(parser.get_state() == ParsingState::FINDING_MESSAGE_LABEL);
-    parsing_result = parser.parse_byte(message[1]);
+    ParsingResult parsing_result2 = parser.parse_byte(message[1]);
     assert(parser.get_state() == ParsingState::PARSING_MESSAGE);
-    parsing_result = parser.parse_byte(message[2]);
+    ParsingResult parsing_result3 = parser.parse_byte(message[2]);
     assert(parser.get_state() == ParsingState::FINDING_END_FLAG);
-    parsing_result = parser.parse_byte(0xAA);
-    assert(parsing_result.get_parsing_error() == ParsingError::END_FLAG_NOT_FOUND);
+    ParsingResult parsing_result4 = parser.parse_byte(0xAA);
+    assert(parsing_result4.get_parsing_error() == ParsingError::END_FLAG_NOT_FOUND);
     assert(parser.get_state() == ParsingState::FINDING_START_FLAG);
     std::cout << "SUCCESS -- MESSAGE PARSING WITH CORRUPTED END FLAG" << std::endl;
 }

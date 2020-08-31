@@ -26,10 +26,9 @@ volatile bool do_homing = false;
 protocol::Parser parser;
 
 void setup() {
-  Serial2.begin(9600); // Note that Serial2 is used for communication between microcontroller and host cpu
   rotary_stepper.setup();
   rotary_homer.setup(rotary_stepper);
-  Serial.begin(9600);
+  Serial.begin(9600);// Note that Serial2 is used for communication between microcontroller and host cpu
   mutex = xSemaphoreCreateMutex();
 
   xTaskCreatePinnedToCore(communication, "communication", 10000, NULL, 1, NULL,  1);
@@ -63,21 +62,19 @@ void control( void * pvParameters ){
 }
 
 
-//ParsingResult parsing_result;
-//assert(parser.get_state() == ParsingState::FINDING_START_FLAG);
-parsing_result = parser.parse_byte(message[0]);
+protocol::ParsingResult parsing_result;
+//parsing_result = parser.parse_byte(message[0]);
 
 void communication( void * pvParameters ){
   esp_task_wdt_feed();
   const TickType_t xDelay = 1 / portTICK_PERIOD_MS;
   for(;;){
-    char received_byte = Serial2.read();
-    ParsingResult parsing_result = parser.parse_byte(received_byte);
+    char received_byte = Serial.read();
+    parsing_result = parser.parse_byte(received_byte);
     if(parsing_result.get_is_parsed()){
-      switch(parsing_result.get_state()) {
-        case
-
-      }
+//      switch(parsing_result.get_state()) {
+//        case protocol::ParsingResult:: 
+//      }
     }
 
     if(xSemaphoreTake(mutex, 10) == pdTRUE) {

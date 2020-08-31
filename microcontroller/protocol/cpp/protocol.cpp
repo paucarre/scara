@@ -2,14 +2,7 @@
 
 namespace protocol {
 
-    const uint8_t MessageType::get_message_size() {
-        return data_lenght + MESSAGE_OVERHEAD_IN_BYTES;
-    }
 
-    const uint8_t MessageType::get_body_size() {
-        // the body is data + label and the label occupies just one byte
-        return (this->data_lenght) + 1;
-    }
 
     char MessageFactory::make_checksum(char* data, uint8_t lenght) {
         uint8_t checksum = 0;
@@ -41,9 +34,6 @@ namespace protocol {
         fill_message_data(body, message_type, message_out);
     }
 
-    Parser::Parser():state(ParsingState::FINDING_START_FLAG) {
-
-    }
 
     ParsingError Parser::validate_checksum(uint8_t data) {
         ParsingError parsing_error = ParsingError::NO_ERROR;
@@ -62,55 +52,65 @@ namespace protocol {
         ParsingError parsing_error = ParsingError::NO_ERROR;
         switch(state) {
             case ParsingState::FINDING_START_FLAG:
-                if(data == START_FLAG) {
-                    state = ParsingState::FINDING_MESSAGE_LABEL;
-                } else {
-                    parsing_error = ParsingError::START_FLAG_NOT_FOUND;
-                }
-                break;
-            case ParsingState::FINDING_MESSAGE_LABEL:
-                for(uint8_t i = 0;message_type.get() == nullptr && i < NUMBER_OF_MESSAGES;++i){
-                    if(MESSAGES[i].get_label() == data){
-                        message_type = &MESSAGES[i];
-                    }
-                }
-                if(message_type.get() == nullptr) {
-                    parsing_error = ParsingError::MESSAGE_LABEL_NOT_FOUND;
-                    state = ParsingState::FINDING_START_FLAG;
-                } else {
-                    state = ParsingState::PARSING_MESSAGE;
-                    data_index = 0;
-                    parsed_data[data_index++] = data;
-                    previous_data_was_escaped = false;
-                }
-                break;
-            case ParsingState::PARSING_MESSAGE:
-                if(data_index >= message_type->get_data_lenght()){
-                    parsing_error = validate_checksum(data);
-                } else {
-                    if(previous_data_was_escaped){
-                        parsed_data[data_index++] = data;
-                        previous_data_was_escaped = false;
+                {
+                    if(data == START_FLAG) {
+                        state = ParsingState::FINDING_MESSAGE_LABEL;
                     } else {
-                        if(data == ESCAPE_FLAG){
-                            previous_data_was_escaped = true;
-                        } else {
-                            parsed_data[data_index++] = data;
-                            previous_data_was_escaped = false;
+                        parsing_error = ParsingError::START_FLAG_NOT_FOUND;
+                    }
+                    break;
+                }
+            case ParsingState::FINDING_MESSAGE_LABEL:
+                {
+                    for(uint8_t i = 0;(message_type.get_label() == UNDEFINED_MESSAGE_TYPE.get_label()) && i < NUMBER_OF_MESSAGES;++i){
+                        if(MESSAGES[i].get_label() == data) {
+                            message_type = MESSAGES[i];
                         }
                     }
+                    if(message_type.get_label() == UNDEFINED_MESSAGE_TYPE.get_label()) {
+                        parsing_error = ParsingError::MESSAGE_LABEL_NOT_FOUND;
+                        state = ParsingState::FINDING_START_FLAG;
+                    } else {
+                        state = ParsingState::PARSING_MESSAGE;
+                        data_index = 0;
+                        parsed_data[data_index++] = data;
+                        previous_data_was_escaped = false;
+                    }
+                    break;
                 }
-                break;
+            case ParsingState::PARSING_MESSAGE:
+                {
+                    if(data_index >= message_type.get_data_lenght()){
+                        parsing_error = validate_checksum(data);
+                    } else {
+                        if(previous_data_was_escaped){
+                            parsed_data[data_index++] = data;
+                            previous_data_was_escaped = false;
+                        } else {
+                            if(data == ESCAPE_FLAG){
+                                previous_data_was_escaped = true;
+                            } else {
+                                parsed_data[data_index++] = data;
+                                previous_data_was_escaped = false;
+                            }
+                        }
+                    }
+                    break;
+                }
             case ParsingState::FINDING_END_FLAG:
-                state = ParsingState::FINDING_START_FLAG;
-                if(data == END_FLAG) {
-                    return ParsingResult(state, parsing_error, message_type, parsed_data, true);
-                } else {
-                    parsing_error = ParsingError::END_FLAG_NOT_FOUND;
+                {
+                    state = ParsingState::FINDING_START_FLAG;
+                    if(data == END_FLAG) {
+                        Message message(message_type, parsed_data);
+                        return ParsingResult(state, parsing_error, message, true);
+                    } else {
+                        parsing_error = ParsingError::END_FLAG_NOT_FOUND;
+                    }
+                    break;
                 }
-                break;
+
         }
-        return ParsingResult(state, parsing_error, message_type, parsed_data, false);
+        return ParsingResult(state, parsing_error, Message(UNDEFINED_MESSAGE_TYPE), false);
     }
 
     Message::Message(MessageType message_type_ ): message_type(message_type_) {

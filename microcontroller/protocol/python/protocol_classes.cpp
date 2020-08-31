@@ -2,7 +2,7 @@
 
 #include <pybind11/stl.h>
 #include <pybind11/pybind11.h>
-
+#include <optional>
 
 namespace py = pybind11;
 
@@ -29,10 +29,15 @@ void init_protocol(py::module &m) {
         .value("END_FLAG_NOT_FOUND", protocol::ParsingError::END_FLAG_NOT_FOUND);
 
      py::class_<protocol::ParsingResult>(m, "ParsingResult")
-          .def(py::init<protocol::ParsingState, protocol::ParsingError,
-               protocol::ptr_wrapper<protocol::MessageType>,  protocol::ptr_wrapper<char>, bool>())
+          .def(py::init<protocol::ParsingState, protocol::ParsingError, protocol::Message, bool>())
           .def("get_state", &protocol::ParsingResult::get_state)
-          .def("get_message_type", &protocol::ParsingResult::get_message_type)
+          .def("get_message",[](protocol::ParsingResult parsing_result) -> std::optional<protocol::Message> {
+               if(parsing_result.get_message().get_message_type().get_label() == protocol::UNDEFINED_MESSAGE_TYPE.get_label()) {
+                    return std::nullopt;
+               } else {
+                    return std::optional(parsing_result.get_message());
+               }
+          })
           .def("is_parsed", &protocol::ParsingResult::get_is_parsed)
           .def("get_parsing_error", &protocol::ParsingResult::get_parsing_error);
 
@@ -59,5 +64,6 @@ void init_protocol(py::module &m) {
                return parse_result;
           })
           .def("get_message_type", &protocol::Parser::get_message_type);
+
 
 }
