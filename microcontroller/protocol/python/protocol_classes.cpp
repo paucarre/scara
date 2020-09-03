@@ -8,12 +8,11 @@ namespace py = pybind11;
 
 void init_protocol(py::module &m) {
 
-     m.attr("myConstant") = py::int_(123);
-
      py::class_<protocol::MessageType>(m, "MessageType")
           .def(py::init<const uint8_t, const uint8_t>())
           .def("get_body_size", &protocol::MessageType::get_body_size)
-          .def("get_message_size", &protocol::MessageType::get_message_size);
+          .def("get_message_size", &protocol::MessageType::get_message_size)
+          .def("get_label", &protocol::MessageType::get_label);
 
      py::enum_<protocol::ParsingState>(m, "ParsingState", py::arithmetic())
           .value("FINDING_START_FLAG", protocol::ParsingState::FINDING_START_FLAG)
@@ -49,6 +48,7 @@ void init_protocol(py::module &m) {
                std::string message_as_string(message.message);
                return py::bytes(message_as_string);
           })
+          .def("get_message_type", &protocol::Message::get_message_type)
           .def_static("make_home_message", &protocol::Message::make_home_message);
 
      py::class_<protocol::Parser>(m, "Parser")
@@ -65,5 +65,6 @@ void init_protocol(py::module &m) {
           })
           .def("get_message_type", &protocol::Parser::get_message_type);
 
+     m.attr("HOME_MESSAGE_TYPE") = py::cast(protocol::HOME_MESSAGE_TYPE);
 
 }
