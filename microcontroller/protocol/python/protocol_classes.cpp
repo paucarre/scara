@@ -12,6 +12,8 @@ void init_protocol(py::module &m) {
           .def(py::init<const uint8_t, const uint8_t>())
           .def("get_body_size", &protocol::MessageType::get_body_size)
           .def("get_message_size", &protocol::MessageType::get_message_size)
+          .def("__eq__", &protocol::MessageType::operator==, py::is_operator())
+          .def("__ne__", &protocol::MessageType::operator!=, py::is_operator())
           .def("get_label", &protocol::MessageType::get_label);
 
      py::enum_<protocol::ParsingState>(m, "ParsingState", py::arithmetic())

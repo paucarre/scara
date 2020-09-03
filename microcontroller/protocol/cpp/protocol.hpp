@@ -39,12 +39,12 @@ namespace protocol {
             uint8_t get_label() { return label; }
             uint8_t get_data_lenght() { return data_length; }
 
-            friend bool operator== (const MessageType &m1, const MessageType &m2){
-                return m1.label == m2.label;
+            bool operator== (const MessageType &m1){
+                return label == m1.label;
             }
 
-            friend bool operator!= (const MessageType &m1, const MessageType m2){
-                return m1.label != m2.label;
+            bool operator!= (const MessageType &m1){
+                return label != m1.label;
             }
 
     };
