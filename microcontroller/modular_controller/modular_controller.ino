@@ -45,12 +45,14 @@ void control( void * pvParameters ){
   esp_task_wdt_feed();
   const TickType_t xDelay = 1 / portTICK_PERIOD_MS;
   int step = 0;
+  bool local_do_homing = false;
   for(;;){
     if(xSemaphoreTake(mutex, 10) == pdTRUE) {
-      if(do_homing){
-        rotary_homer.loop(rotary_stepper);
-      }
+      local_do_homing = do_homing;
       xSemaphoreGive(mutex);
+    }
+    if(local_do_homing){
+      rotary_homer.loop(rotary_stepper);
     }
     esp_task_wdt_feed();
     step++;
@@ -74,18 +76,20 @@ void communication( void * pvParameters ){
     parsing_result = parser.parse_byte(received_byte);
     if(parsing_result.get_is_parsed()){
       protocol::Message message = parsing_result.get_message();
-      if(message.get_message_type() != protocol::UNDEFINED_MESSAGE_TYPE){
-        protocol::Message message_ack = protocol::Message::make_ack_message(message);
+      if(message.get_message_type() != protocol::HOME_MESSAGE_TYPE){
+        if(xSemaphoreTake(mutex, 10) == pdTRUE) {
+          if(!do_homing) {
+            do_homing = true;
+          }
+          xSemaphoreGive(mutex);
+        }
+      }
+      if(message.get_message_type() != protocol::UNDEFINED_MESSAGE_TYPE){        
+        protocol::Message message_ack = protocol::Message::make_response_message(message);
         Serial.write(message_ack.message);
       }
     }
-    if(xSemaphoreTake(mutex, 10) == pdTRUE) {
-      if(!do_homing) {
-        do_homing = true;
-      }
-      xSemaphoreGive(mutex);
-    }
-    delayMicroseconds(1000);
+    delayMicroseconds(100);
     esp_task_wdt_feed();
     vTaskDelay(xDelay);
     taskYIELD();

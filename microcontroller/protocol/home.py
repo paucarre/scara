@@ -1,29 +1,46 @@
 import serial
 import protocol
 import time
+from returns.result import Failure, ResultE, Success
 
-AXIS_1_SERIAL = '/dev/ttyS6'
-SERIAL_BAUDRATE = 9600
-MAX_ATTEMTS = 10
+class JointDevice():
 
-home_message = protocol.Message.make_home_message()
-message_bytes = home_message.get_bytes()
+    def __init__(self, serial_name, baud_rate=9600):
+        self.parser = protocol.Parser()
+        self.serial_name = serial_name
+        self.baud_rate = baud_rate
 
-parser = protocol.Parser()
-with serial.Serial(AXIS_1_SERIAL, SERIAL_BAUDRATE, timeout=1) as serial_handler:
-    bytes_written = serial_handler.write(message_bytes)
-    print(f'Bytes written: {bytes_written}')
+    def _try_to_get_response(self, serial_handler, MAX_ATTEMTS=10):
+        current_attempt = 0
+        while current_attempt < MAX_ATTEMTS:
+            if serial_handler.inWaiting():
+                received_byte = serial_handler.readline()
+                parsing_result = self.parser.parse_bytes(received_byte)
+                if parsing_result.is_parsed():
+                    message = parsing_result.get_message()
+                    if message.get_message_type() == protocol.RESPONSE_MESSAGE_TYPE:
+                        return Success(message)
+                return Failure("Could not parse reponse message")
+            else:
+                time.sleep(10 / 1000)
+                current_attempt += 1
+        return Failure("Failed all attempts to receive the response message")
 
-
-    current_attempt = 0
-    while current_attempt < MAX_ATTEMTS:
-        if serial_handler.inWaiting():
-            received_byte = serial_handler.readline()
-            parsing_result = parser.parse_bytes(received_byte)
-            if parsing_result.is_parsed():
-                message = parsing_result.get_message()
-                if message.get_message_type() == protocol.RESPONSE_MESSAGE_TYPE:
-                    print(f'Received Response')
+    def send_message(self, message):
+        message_bytes = message.get_bytes()
+        try:
+            with serial.Serial(self.serial_name, self.baud_rate, timeout=1) as serial_handler:
+                bytes_written = serial_handler.write(message_bytes)
+                if bytes_written == len(message_bytes):
+                    return_message_either = self._try_to_get_response(serial_handler)
+                    return return_message_either.unify(lambda message: Success(f'Message successfully received'))
                 else:
-                    time.sleep(10 / 1000)
-                    current_attempt += 1
+                    return Failure(f'Error writting message bytes')
+        except Exception as error:
+            return Failure(error)
+
+
+joint_1_device = JointDevice('/dev/ttyS6')
+home_message = protocol.Message.make_home_message()
+result = joint_1_device.send_message(home_message)
+print(result)
