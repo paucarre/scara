@@ -17,9 +17,3 @@ assert parsing_result.is_parsed(), 'A properly seralized message should be able 
 assert parsing_result.get_message().get_bytes() == message_bytes, 'The parsed message should be the one requested to be parsed'
 
 assert parsing_result.get_message().get_message_type() == protocol.HOME_MESSAGE_TYPE, 'The message type of parsing a home message should be home type'
-
-#!AXIS_1_SERIAL = '/dev/ttyS6'
-#~SERIAL_BAUDRATE = 9600
-#with serial.Serial(AXIS_1_SERIAL, SERIAL_BAUDRATE, timeout=1) as serial_handler:
-#    bytes_written = serial_handler.write(message_bytes)
-#    print(bytes_written)

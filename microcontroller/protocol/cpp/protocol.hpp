@@ -11,6 +11,7 @@ namespace protocol {
         FINDING_END_FLAG
     };
 
+    static const uint8_t MESSAGE_TYPE_INDEX = 1;
     static const uint8_t MAXIMUM_DATA_PLAYLOAD_BYTES = 20;
     static const uint8_t MESSAGE_OVERHEAD_IN_BYTES = 4; // IT'S 4 BECAUSE WE NEED START + TYPE + CHECKSUM + END
     static const uint8_t MAXIMUM_MESSAGE_PLAYLOAD_BYTES = MAXIMUM_DATA_PLAYLOAD_BYTES + MESSAGE_OVERHEAD_IN_BYTES;
@@ -60,10 +61,10 @@ namespace protocol {
 
 
     static MessageType HOME_MESSAGE_TYPE = MessageType(0x01, 0);
-    static MessageType HOME_RETURN_MESSAGE_TYPE = MessageType(0x02, 0);
+    static MessageType RESPONSE_MESSAGE_TYPE = MessageType(0x02, 0);
     static MessageType UNDEFINED_MESSAGE_TYPE = MessageType(0xFF, 0);
     static const uint8_t NUMBER_OF_MESSAGES = 2;
-    static MessageType MESSAGES[NUMBER_OF_MESSAGES] = { HOME_MESSAGE_TYPE, HOME_RETURN_MESSAGE_TYPE};
+    static MessageType MESSAGES[NUMBER_OF_MESSAGES] = { HOME_MESSAGE_TYPE, RESPONSE_MESSAGE_TYPE};
 
     class Message {
         private:
@@ -82,6 +83,10 @@ namespace protocol {
             static Message make_home_message(){
                 const char data[0] = {};
                 return Message(HOME_MESSAGE_TYPE, data);
+            }
+            static Message make_response_message(Message request_message){
+                const char data[1] = {request_message.message[MESSAGE_TYPE_INDEX]};
+                return Message(RESPONSE_MESSAGE_TYPE, data);
             }
     };
 

@@ -80,6 +80,6 @@ void message_tests(MessageType message_type) {
 
 int main(int argc, char **argv) {
     message_tests(HOME_MESSAGE_TYPE);
-    message_tests(HOME_RETURN_MESSAGE_TYPE);
+    message_tests(RESPONSE_MESSAGE_TYPE);
     return 0;
 }

@@ -1,6 +1,7 @@
 #include "rotary_stepper.hpp"
 #include "rotary_homer.hpp"
 #include "protocol.hpp"
+
 #include <esp_task_wdt.h>
 #include <esp_int_wdt.h>
 
@@ -72,11 +73,12 @@ void communication( void * pvParameters ){
     char received_byte = Serial.read();
     parsing_result = parser.parse_byte(received_byte);
     if(parsing_result.get_is_parsed()){
-//      switch(parsing_result.get_state()) {
-//        case protocol::ParsingResult:: 
-//      }
+      protocol::Message message = parsing_result.get_message();
+      if(message.get_message_type() != protocol::UNDEFINED_MESSAGE_TYPE){
+        protocol::Message message_ack = protocol::Message::make_ack_message(message);
+        Serial.write(message_ack.message);
+      }
     }
-
     if(xSemaphoreTake(mutex, 10) == pdTRUE) {
       if(!do_homing) {
         do_homing = true;

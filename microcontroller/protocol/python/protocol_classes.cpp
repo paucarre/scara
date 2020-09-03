@@ -50,6 +50,14 @@ void init_protocol(py::module &m) {
                std::string message_as_string(message.message);
                return py::bytes(message_as_string);
           })
+          .def("get_data", [](protocol::Message message){
+               char whole_message[protocol::MAXIMUM_MESSAGE_PLAYLOAD_BYTES] = {0};
+               for(int i = 2;i < message.get_message_size() - 2;i++){
+                    whole_message[i - 2] = message.message[i];
+               }
+               std::string message_as_string(whole_message);
+               return py::bytes(message_as_string);
+          })
           .def("get_message_type", &protocol::Message::get_message_type)
           .def_static("make_home_message", &protocol::Message::make_home_message);
 
@@ -68,5 +76,6 @@ void init_protocol(py::module &m) {
           .def("get_message_type", &protocol::Parser::get_message_type);
 
      m.attr("HOME_MESSAGE_TYPE") = py::cast(protocol::HOME_MESSAGE_TYPE);
+     m.attr("RESPONSE_MESSAGE_TYPE") = py::cast(protocol::RESPONSE_MESSAGE_TYPE);
 
 }
