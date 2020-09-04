@@ -1,5 +1,4 @@
 #include "protocol.hpp"
-
 namespace protocol {
 
 
@@ -28,16 +27,15 @@ namespace protocol {
         uint8_t body_size = message_type.get_body_size();
         char body[body_size];
         body[0] = message_type.get_label();
-        for(uint8_t i = 0; i < message_type.get_data_lenght(); i++){
+        for(uint8_t i = 0; i < message_type.get_data_length(); i++){
             body[i + 1] = data[i];
         }
         fill_message_data(body, message_type, message_out);
     }
 
 
-    ParsingError Parser::validate_checksum(uint8_t data) {
+    ParsingError Parser::validate_checksum(uint8_t parsed_checksum) {
         ParsingError parsing_error = ParsingError::NO_ERROR;
-        uint8_t parsed_checksum = data;
         uint8_t computed_checksum = MessageFactory::make_checksum(parsed_data, data_index);
         if(parsed_checksum == computed_checksum) {
             state = ParsingState::FINDING_END_FLAG;
@@ -73,14 +71,15 @@ namespace protocol {
                     } else {
                         state = ParsingState::PARSING_MESSAGE;
                         data_index = 0;
-                        parsed_data[data_index++] = data;
+                        parsed_data[data_index] = data;
+                        data_index++;
                         previous_data_was_escaped = false;
                     }
                     break;
                 }
             case ParsingState::PARSING_MESSAGE:
                 {
-                    if(data_index >= message_type.get_data_lenght()){
+                    if(data_index > message_type.get_data_length()){
                         parsing_error = validate_checksum(data);
                     } else {
                         if(previous_data_was_escaped){

@@ -52,14 +52,15 @@ void init_protocol(py::module &m) {
           })
           .def("get_data", [](protocol::Message message){
                char whole_message[protocol::MAXIMUM_MESSAGE_PLAYLOAD_BYTES] = {0};
-               for(int i = 2;i < message.get_message_size() - 2;i++){
-                    whole_message[i - 2] = message.message[i];
+               for(int i = 0;i < message.get_message_type().get_data_length();i++){
+                    whole_message[i] = message.message[i + protocol::MESSAGE_DATA_OFFSET_IN_BYTES];
                }
                std::string message_as_string(whole_message);
                return py::bytes(message_as_string);
           })
           .def("get_message_type", &protocol::Message::get_message_type)
-          .def_static("make_home_message", &protocol::Message::make_home_message);
+          .def_static("make_home_message", &protocol::Message::make_home_message)
+          .def_static("make_configure_message", &protocol::Message::make_configure_message);
 
      py::class_<protocol::Parser>(m, "Parser")
           .def(py::init<>())

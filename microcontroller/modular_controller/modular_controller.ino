@@ -11,15 +11,12 @@
 #define RIGH_MAGNETIC_SENSOR_PIN 12
 // axis 3
 // RotaryStepper rotary_stepper(false, 27, 26);
-
 // axis 2
 // RotaryStepper rotary_stepper(false, 27, 26);
-
 // axis 1
 RotaryStepper rotary_stepper(false, 27, 26);
 
 RotaryHomer rotary_homer(CENTER_MAGNETIC_SENSOR_PIN, LEFT_MAGNETIC_SENSOR_PIN, RIGH_MAGNETIC_SENSOR_PIN);
-
 
 SemaphoreHandle_t mutex;
 volatile bool do_homing = false;
@@ -76,11 +73,19 @@ void communication( void * pvParameters ){
     parsing_result = parser.parse_byte(received_byte);
     if(parsing_result.get_is_parsed()){
       protocol::Message message = parsing_result.get_message();
-      if(message.get_message_type() != protocol::HOME_MESSAGE_TYPE){
+      if(message.get_message_type() == protocol::HOME_MESSAGE_TYPE){
         if(xSemaphoreTake(mutex, 10) == pdTRUE) {
           if(!do_homing) {
             do_homing = true;
           }
+          xSemaphoreGive(mutex);
+        }
+      } else if(message.get_message_type() == protocol::CONFIGURE_MESSAGE_TYPE){
+        bool dir_high_is_clockwise = message.message[0 + protocol::MESSAGE_DATA_OFFSET_IN_BYTES];
+        uint8_t direction_pin = message.message[1 + protocol::MESSAGE_DATA_OFFSET_IN_BYTES];
+        uint8_t step_pin = message.message[2 + protocol::MESSAGE_DATA_OFFSET_IN_BYTES];
+        if(xSemaphoreTake(mutex, 10) == pdTRUE) {
+          rotary_stepper.configure(dir_high_is_clockwise, direction_pin, step_pin);         
           xSemaphoreGive(mutex);
         }
       }
