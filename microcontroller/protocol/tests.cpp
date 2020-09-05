@@ -89,8 +89,30 @@ void response_message_test() {
     std::cout << "SUCCESS -- RESPONSE MESSAGE PARSING" << std::endl;
 }
 
+void print_message(Message message) {
+    for(int i = 0; i < message.get_message_size();i++){
+        std::cout << "0x" << std::hex << (int)(message.message[i] & 0xFF) << " ";
+    }
+    std::cout << std::endl;
+}
+
+void configure_message_test() {
+    Message message = Message::make_configure_message(true, 6, 7);
+    char expected_message[7] = { (char)0xAA, (char)0x03, (char)0x01, (char)0x06, (char)0x07, (char)(0x00 ^ 0x03 ^ 0x01 ^ 0x06 ^ 0x07), (char)0xFF};
+    assert(message.message[0] == expected_message[0]);
+    assert(message.message[1] == expected_message[1]);
+    assert(message.message[2] == expected_message[2]);
+    assert(message.message[3] == expected_message[3]);
+    assert(message.message[4] == expected_message[4]);
+    assert(message.message[5] == expected_message[5]);
+    assert(message.message[6] == expected_message[6]);
+}
+
+
+
 int main(int argc, char **argv) {
     home_message_tests();
     response_message_test();
+    configure_message_test();
     return 0;
 }

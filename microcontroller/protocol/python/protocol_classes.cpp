@@ -46,8 +46,8 @@ void init_protocol(py::module &m) {
           .def(py::init<protocol::MessageType, const char*>())
           .def("get_message_size", &protocol::Message::get_message_size)
           .def("get_byte_at", &protocol::Message::get_byte_at)
-          .def("get_bytes", [](const protocol::Message message){
-               std::string message_as_string(message.message);
+          .def("get_bytes", [](protocol::Message message){
+               std::string message_as_string(message.message, message.get_message_size());
                return py::bytes(message_as_string);
           })
           .def("get_data", [](protocol::Message message){
@@ -55,7 +55,7 @@ void init_protocol(py::module &m) {
                for(int i = 0;i < message.get_message_type().get_data_length();i++){
                     whole_message[i] = message.message[i + protocol::MESSAGE_DATA_OFFSET_IN_BYTES];
                }
-               std::string message_as_string(whole_message);
+               std::string message_as_string(whole_message, message.get_message_type().get_data_length());
                return py::bytes(message_as_string);
           })
           .def("get_message_type", &protocol::Message::get_message_type)
@@ -74,6 +74,7 @@ void init_protocol(py::module &m) {
                }
                return parse_result;
           })
+          .def("parse_byte", &protocol::Parser::parse_byte)
           .def("get_message_type", &protocol::Parser::get_message_type);
 
      m.attr("HOME_MESSAGE_TYPE") = py::cast(protocol::HOME_MESSAGE_TYPE);

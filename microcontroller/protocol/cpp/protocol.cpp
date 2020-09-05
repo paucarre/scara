@@ -121,7 +121,7 @@ namespace protocol {
         protocol::MessageFactory::write_message_data(message_type, data_, message);
     }
 
-    uint8_t Message::get_message_size() { return message_type.get_body_size(); }
+    uint8_t Message::get_message_size() { return message_type.get_body_size() + message_type.get_data_length(); }
     char Message::get_byte_at(uint8_t byte_index) { return message[byte_index]; }
     const char* Message::get_bytes() {
         return message;

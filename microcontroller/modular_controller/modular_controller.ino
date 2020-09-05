@@ -85,7 +85,8 @@ void communication( void * pvParameters ){
         uint8_t direction_pin = message.message[1 + protocol::MESSAGE_DATA_OFFSET_IN_BYTES];
         uint8_t step_pin = message.message[2 + protocol::MESSAGE_DATA_OFFSET_IN_BYTES];
         if(xSemaphoreTake(mutex, 10) == pdTRUE) {
-          rotary_stepper.configure(dir_high_is_clockwise, direction_pin, step_pin);         
+          do_homing = true;
+          //rotary_stepper.configure(dir_high_is_clockwise, direction_pin, step_pin);         
           xSemaphoreGive(mutex);
         }
       }

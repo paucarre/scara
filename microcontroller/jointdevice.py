@@ -13,17 +13,18 @@ class JointDevice():
         self.step_pin = step_pin
         self.dir_pin = dir_pin
 
-    def _try_to_get_response(self, serial_handler, MAX_ATTEMTS=10):
+    def _try_to_get_response(self, serial_handler, MAX_ATTEMTS=30):
         current_attempt = 0
         while current_attempt < MAX_ATTEMTS:
-            if serial_handler.inWaiting():
-                received_bytes = serial_handler.readline()
-                parsing_result = self.parser.parse_bytes(received_bytes)
+            while serial_handler.inWaiting():
+                received_byte = serial_handler.read()
+                parsing_result = self.parser.parse_byte(received_byte)
+                print(parsing_result)
                 if parsing_result.is_parsed():
                     message = parsing_result.get_message()
                     if message.get_message_type() == protocol.RESPONSE_MESSAGE_TYPE:
                         return Success(message)
-                return Failure("Could not parse reponse message")
+                #return Failure(f"Could not parse reponse message: {received_byte}")
             else:
                 time.sleep(100 / 1000)
                 current_attempt += 1
@@ -54,6 +55,7 @@ class JointDevice():
 angular_joint_1_device = JointDevice('/dev/ttyS6', False, 27, 26)
 angular_joint_2_device = JointDevice('/dev/ttyS8', False, 27, 26)
 angular_joint_3_device = JointDevice('/dev/ttyS9', False, 27, 26)
+
 
 joints = [angular_joint_1_device, angular_joint_2_device, angular_joint_3_device]
 
