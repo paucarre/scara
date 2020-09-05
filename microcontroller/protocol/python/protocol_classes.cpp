@@ -59,8 +59,12 @@ void init_protocol(py::module &m) {
                return py::bytes(message_as_string);
           })
           .def("get_message_type", &protocol::Message::get_message_type)
-          .def_static("make_home_message", &protocol::Message::make_home_message)
-          .def_static("make_configure_message", &protocol::Message::make_configure_message);
+          .def_static("make_homing_message", &protocol::Message::make_homing_message)
+          .def_static("make_homing_response_message", &protocol::Message::make_homing_response_message)
+          .def_static("make_configure_message", &protocol::Message::make_configure_message)
+          .def_static("make_configure_response_message", &protocol::Message::make_configure_response_message)
+          .def_static("make_homing_state_message", &protocol::Message::make_homing_state_message)
+          .def_static("make_homing_state_response_message", &protocol::Message::make_homing_state_response_message);
 
      py::class_<protocol::Parser>(m, "Parser")
           .def(py::init<>())
@@ -78,6 +82,10 @@ void init_protocol(py::module &m) {
           .def("get_message_type", &protocol::Parser::get_message_type);
 
      m.attr("HOME_MESSAGE_TYPE") = py::cast(protocol::HOME_MESSAGE_TYPE);
-     m.attr("RESPONSE_MESSAGE_TYPE") = py::cast(protocol::RESPONSE_MESSAGE_TYPE);
+     m.attr("HOME_RESPONSE_MESSAGE_TYPE") = py::cast(protocol::HOME_RESPONSE_MESSAGE_TYPE);
+     m.attr("CONFIGURE_MESSAGE_TYPE") = py::cast(protocol::CONFIGURE_MESSAGE_TYPE);
+     m.attr("CONFIGURE_RESPONSE_MESSAGE_TYPE") = py::cast(protocol::CONFIGURE_RESPONSE_MESSAGE_TYPE);
+     m.attr("HOMING_STATE_MESSAGE_TYPE") = py::cast(protocol::HOMING_STATE_MESSAGE_TYPE);
+     m.attr("HOMING_STATE_MESSAGE_RESPONSE_TYPE") = py::cast(protocol::HOMING_STATE_MESSAGE_RESPONSE_TYPE);
 
 }

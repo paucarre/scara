@@ -18,7 +18,7 @@ void RotaryHomer::check_end_stops(RotaryStepper &rotary_stepper){
   if(right_on || left_on) {
     rotate_clockwise = !rotate_clockwise;
     rotary_stepper.apply_direction(rotate_clockwise);
-    for(uint8_t i = 0; (left_is_on() || right_is_on()) && i < 500; i ++){      
+    for(uint8_t i = 0; (left_is_on() || right_is_on()) && i < 500; i ++){
         rotary_stepper.step();
         delayMicroseconds(1000);
     }
@@ -26,6 +26,9 @@ void RotaryHomer::check_end_stops(RotaryStepper &rotary_stepper){
 }
 
 void RotaryHomer::loop(RotaryStepper &rotary_stepper){
+  if(homing_state == HomingState::HOMING_NOT_STARTED){
+    homing_state = HomingState::MOVE_UNTIL_NO_SENSOR_READ;
+  }
   if(homing_state != HomingState::HOMING_FINISHED){
     int center_on = center_is_on();
     check_end_stops(rotary_stepper);
@@ -33,7 +36,7 @@ void RotaryHomer::loop(RotaryStepper &rotary_stepper){
     if(center_on) {
       if(homing_state == HomingState::FIND_FIRST_SENSOR_READ) {
         homing_state = HomingState::READ_UNITIL_SENSOR_NO_LONGER_SENSES;
-      }    
+      }
       if(homing_state == HomingState::READ_UNITIL_SENSOR_NO_LONGER_SENSES ){
         steps_with_center_on ++;
       }

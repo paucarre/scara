@@ -1,17 +1,18 @@
 #pragma once
 
 #include <stdint.h>
-#include <Arduino.h> 
+#include <Arduino.h>
 #include "rotary_stepper.hpp"
 
 enum HomingState {
+          HOMING_NOT_STARTED,
           MOVE_UNTIL_NO_SENSOR_READ,
           FIND_FIRST_SENSOR_READ,
           READ_UNITIL_SENSOR_NO_LONGER_SENSES,
           REVERSE_DIRECTION_HALF_THE_STEPS,
           HOMING_FINISHED
       };
-      
+
 class RotaryHomer {
   private:
     uint8_t center_magnetic_sensor_pin;
@@ -28,12 +29,12 @@ class RotaryHomer {
     bool right_is_on();
     void loop(RotaryStepper &rotary_stepper);
     void setup(RotaryStepper &rotary_stepper);
-    RotaryHomer(uint8_t _center_magnetic_sensor_pin, 
-      uint8_t _left_magnetic_end_stop_pin, 
+    RotaryHomer(uint8_t _center_magnetic_sensor_pin,
+      uint8_t _left_magnetic_end_stop_pin,
       uint8_t _right_magnetic_end_stop_pin): center_magnetic_sensor_pin(_center_magnetic_sensor_pin),
                                              left_magnetic_end_stop_pin(_left_magnetic_end_stop_pin),
                                              right_magnetic_end_stop_pin(_right_magnetic_end_stop_pin),
-                                             homing_state(HomingState::MOVE_UNTIL_NO_SENSOR_READ){
-      
+                                             homing_state(HomingState::HOMING_NOT_STARTED){
+
     }
 };

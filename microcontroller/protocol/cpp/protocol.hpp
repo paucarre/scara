@@ -62,11 +62,17 @@ namespace protocol {
 
 
     static MessageType HOME_MESSAGE_TYPE = MessageType(0x01, 0);
-    static MessageType RESPONSE_MESSAGE_TYPE = MessageType(0x02, 1);
+    static MessageType HOME_RESPONSE_MESSAGE_TYPE = MessageType(0x02, 0);
     static MessageType CONFIGURE_MESSAGE_TYPE = MessageType(0x03, 3);
+    static MessageType CONFIGURE_RESPONSE_MESSAGE_TYPE = MessageType(0x04, 0);
+    static MessageType HOMING_STATE_MESSAGE_TYPE = MessageType(0x05, 0);
+    static MessageType HOMING_STATE_MESSAGE_RESPONSE_TYPE = MessageType(0x06, 1);
     static MessageType UNDEFINED_MESSAGE_TYPE = MessageType(0xCC, 0);
-    static const uint8_t NUMBER_OF_MESSAGES = 3;
-    static MessageType MESSAGES[NUMBER_OF_MESSAGES] = { HOME_MESSAGE_TYPE, RESPONSE_MESSAGE_TYPE, CONFIGURE_MESSAGE_TYPE};
+    static const uint8_t NUMBER_OF_MESSAGES = 6;
+    static MessageType MESSAGES[NUMBER_OF_MESSAGES] = {
+        HOME_MESSAGE_TYPE, HOME_RESPONSE_MESSAGE_TYPE,
+        CONFIGURE_MESSAGE_TYPE, CONFIGURE_RESPONSE_MESSAGE_TYPE,
+        HOMING_STATE_MESSAGE_TYPE, HOMING_STATE_MESSAGE_RESPONSE_TYPE};
 
     class Message {
         private:
@@ -84,19 +90,35 @@ namespace protocol {
             MessageType get_message_type() {
                 return message_type;
             }
-            static Message make_home_message(){
-                const char data[0] = {};
-                return Message(HOME_MESSAGE_TYPE, data);
-            }
+
             static Message make_configure_message(bool dir_high_is_clockwise, uint8_t dir_pin, uint8_t step_pin){
                 const char data[3] = {(char)dir_high_is_clockwise, (char)dir_pin, (char)step_pin};
                 return Message(CONFIGURE_MESSAGE_TYPE, data);
             }
-            // TODO: add extra parameter with data to return (e.g. return the current position)
-            static Message make_response_message(Message request_message){
-                const char data[1] = {request_message.message[MESSAGE_TYPE_INDEX]};
-                return Message(RESPONSE_MESSAGE_TYPE, data);
+            static Message make_configure_response_message(){
+                const char data[0] = {};
+                return Message(CONFIGURE_RESPONSE_MESSAGE_TYPE, data);
             }
+
+            static Message make_homing_message(){
+                const char data[0] = {};
+                return Message(HOME_MESSAGE_TYPE, data);
+            }
+            static Message make_homing_response_message(){
+                const char data[0] = {};
+                return Message(HOME_RESPONSE_MESSAGE_TYPE, data);
+            }
+
+            static Message make_homing_state_message(){
+                const char data[0] = {};
+                return Message(CONFIGURE_RESPONSE_MESSAGE_TYPE, data);
+            }
+
+            static Message make_homing_state_response_message(){ //TODO: complete
+                const char data[0] = {};
+                return Message(CONFIGURE_RESPONSE_MESSAGE_TYPE, data);
+            }
+
     };
 
 
