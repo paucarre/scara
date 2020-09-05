@@ -76,7 +76,9 @@ namespace protocol {
             char message[MAXIMUM_MESSAGE_PLAYLOAD_BYTES] = {0};
             Message(MessageType message_type_, const char* data_);
             Message(MessageType message_type_);
-            uint8_t get_message_size();
+            uint8_t get_message_size() {
+                return message_type.get_message_size();
+            }
             char get_byte_at(uint8_t byte_index);
             const char* get_bytes();
             MessageType get_message_type() {

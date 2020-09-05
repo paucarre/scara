@@ -19,12 +19,11 @@ class JointDevice():
             while serial_handler.inWaiting():
                 received_byte = serial_handler.read()
                 parsing_result = self.parser.parse_byte(received_byte)
-                print(parsing_result)
+                #print(parsing_result)
                 if parsing_result.is_parsed():
                     message = parsing_result.get_message()
                     if message.get_message_type() == protocol.RESPONSE_MESSAGE_TYPE:
                         return Success(message)
-                #return Failure(f"Could not parse reponse message: {received_byte}")
             else:
                 time.sleep(100 / 1000)
                 current_attempt += 1
@@ -53,15 +52,15 @@ class JointDevice():
 
 
 angular_joint_1_device = JointDevice('/dev/ttyS6', False, 27, 26)
-angular_joint_2_device = JointDevice('/dev/ttyS8', False, 27, 26)
-angular_joint_3_device = JointDevice('/dev/ttyS9', False, 27, 26)
-
+angular_joint_2_device = JointDevice('/dev/ttyS9', False, 27, 26)
+angular_joint_3_device = JointDevice('/dev/ttyS10', False, 27, 26)
 
 joints = [angular_joint_1_device, angular_joint_2_device, angular_joint_3_device]
 
 for joint in joints:
     result = joint.configure()
     print(result)
+    time.sleep(2)
     result = joint.home()
     print(result)
     time.sleep(2)

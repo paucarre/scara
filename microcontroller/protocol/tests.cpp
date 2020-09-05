@@ -106,11 +106,24 @@ void configure_message_test() {
     assert(message.message[4] == expected_message[4]);
     assert(message.message[5] == expected_message[5]);
     assert(message.message[6] == expected_message[6]);
+    std::cout << "SUCCESS -- CONFIGURE MESSAGE CREATION" << std::endl;
 }
 
 
+void home_creation_message_test() {
+    Message message = Message::make_home_message();
+    char expected_message[7] = { (char)0xAA, (char)0x01, (char)(0x00 ^ 0x01), (char)0xFF};
+    assert(message.message[0] == expected_message[0]);
+    assert(message.message[1] == expected_message[1]);
+    assert(message.message[2] == expected_message[2]);
+    assert(message.message[3] == expected_message[3]);
+    assert(message.get_message_size() == 4);
+    std::cout << "SUCCESS -- HOME MESSAGE CREATION" << std::endl;
+}
+
 
 int main(int argc, char **argv) {
+    home_creation_message_test();
     home_message_tests();
     response_message_test();
     configure_message_test();
