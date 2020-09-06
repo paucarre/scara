@@ -86,6 +86,6 @@ void init_protocol(py::module &m) {
      m.attr("CONFIGURE_MESSAGE_TYPE") = py::cast(protocol::CONFIGURE_MESSAGE_TYPE);
      m.attr("CONFIGURE_RESPONSE_MESSAGE_TYPE") = py::cast(protocol::CONFIGURE_RESPONSE_MESSAGE_TYPE);
      m.attr("HOMING_STATE_MESSAGE_TYPE") = py::cast(protocol::HOMING_STATE_MESSAGE_TYPE);
-     m.attr("HOMING_STATE_MESSAGE_RESPONSE_TYPE") = py::cast(protocol::HOMING_STATE_MESSAGE_RESPONSE_TYPE);
+     m.attr("HOMING_STATE_RESPONSE_MESSAGE_TYPE") = py::cast(protocol::HOMING_STATE_RESPONSE_MESSAGE_TYPE);
 
 }

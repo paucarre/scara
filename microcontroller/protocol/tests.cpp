@@ -122,15 +122,53 @@ void home_creation_message_test() {
 
 void return_home_creation_message_test() {
     Message message = Message::make_homing_response_message();
-    char expected_message[5] = { (char)0xAA, (char)0x02, (char)(0x00 ^ 0x02 ), (char)0xFF};
+    char expected_message[4] = { (char)0xAA, (char)0x02, (char)0x2, (char)0xFF};
     assert(message.message[0] == expected_message[0]);
     assert(message.message[1] == expected_message[1]);
     assert(message.message[2] == expected_message[2]);
     assert(message.message[3] == expected_message[3]);
     assert(message.get_message_size() == 4);
-    std::cout << "SUCCESS -- RETURN HOME MESSAGE CREATION" << std::endl;
+    std::cout << "SUCCESS -- RETURN HOMING RESPONSE MESSAGE CREATION" << std::endl;
 }
 
+
+void return_homing_state_creation_message_test() {
+    Message message = Message::make_homing_state_response_message(0x12);
+    char expected_message[5] = { (char)0xAA, (char)0x06, (char)0x12, (char) 0x14, (char) 0xFF };
+    assert(message.message[0] == expected_message[0]);
+    assert(message.message[1] == expected_message[1]);
+    assert(message.message[2] == expected_message[2]);
+    assert(message.message[3] == expected_message[3]);
+    assert(message.message[4] == expected_message[4]);
+    assert(message.get_message_size() == 5);
+    std::cout << "SUCCESS -- RETURN HOME STATE MESSAGE CREATION" << std::endl;
+}
+
+
+void protocol_test() {
+    Parser parser;
+    ParsingResult parse_result;
+
+    Message homing_message = Message::make_homing_response_message();
+    //print_message(homing_message);
+    for(uint32_t idx = 0; idx < homing_message.get_message_type().get_message_size(); idx++){
+        parse_result = parser.parse_byte(homing_message.message[idx]);
+        //std::cout  << (int) homing_message.message[idx] << ": " << static_cast<int>(parse_result.get_state()) << std::endl;
+    }
+    assert(parse_result.get_is_parsed());
+    assert(parse_result.get_message().get_message_type() == homing_message.get_message_type());
+
+    Message homing_state_message = Message::make_homing_state_response_message(0x3);
+    //print_message(homing_state_message);
+    for(uint32_t idx = 0; idx < homing_state_message.get_message_type().get_message_size(); idx++){
+        parse_result = parser.parse_byte(homing_state_message.message[idx]);
+        //std::cout  << (int) homing_state_message.message[idx] << ": " << static_cast<int>(parse_result.get_state()) << std::endl;
+    }
+    assert(parse_result.get_is_parsed());
+    assert(parse_result.get_message().get_message_type() == homing_state_message.get_message_type());
+
+    std::cout << "SUCCESS -- PROTOCOL MESSAGE SEQUENCE TEST" << std::endl;
+}
 
 
 int main(int argc, char **argv) {
@@ -139,5 +177,7 @@ int main(int argc, char **argv) {
     home_response_message_test();
     return_home_creation_message_test();
     configure_message_test();
+    return_homing_state_creation_message_test();
+    protocol_test();
     return 0;
 }

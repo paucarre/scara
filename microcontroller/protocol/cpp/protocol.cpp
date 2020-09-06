@@ -60,6 +60,7 @@ namespace protocol {
                 }
             case ParsingState::FINDING_MESSAGE_LABEL:
                 {
+                    message_type = UNDEFINED_MESSAGE_TYPE;
                     for(uint8_t i = 0;(message_type.get_label() == UNDEFINED_MESSAGE_TYPE.get_label()) && i < NUMBER_OF_MESSAGES;++i){
                         if(MESSAGES[i].get_label() == data) {
                             message_type = MESSAGES[i];

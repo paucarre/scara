@@ -66,13 +66,13 @@ namespace protocol {
     static MessageType CONFIGURE_MESSAGE_TYPE = MessageType(0x03, 3);
     static MessageType CONFIGURE_RESPONSE_MESSAGE_TYPE = MessageType(0x04, 0);
     static MessageType HOMING_STATE_MESSAGE_TYPE = MessageType(0x05, 0);
-    static MessageType HOMING_STATE_MESSAGE_RESPONSE_TYPE = MessageType(0x06, 1);
+    static MessageType HOMING_STATE_RESPONSE_MESSAGE_TYPE = MessageType(0x06, 1);
     static MessageType UNDEFINED_MESSAGE_TYPE = MessageType(0xCC, 0);
     static const uint8_t NUMBER_OF_MESSAGES = 6;
     static MessageType MESSAGES[NUMBER_OF_MESSAGES] = {
         HOME_MESSAGE_TYPE, HOME_RESPONSE_MESSAGE_TYPE,
         CONFIGURE_MESSAGE_TYPE, CONFIGURE_RESPONSE_MESSAGE_TYPE,
-        HOMING_STATE_MESSAGE_TYPE, HOMING_STATE_MESSAGE_RESPONSE_TYPE};
+        HOMING_STATE_MESSAGE_TYPE, HOMING_STATE_RESPONSE_MESSAGE_TYPE};
 
     class Message {
         private:
@@ -111,12 +111,12 @@ namespace protocol {
 
             static Message make_homing_state_message(){
                 const char data[0] = {};
-                return Message(CONFIGURE_RESPONSE_MESSAGE_TYPE, data);
+                return Message(HOMING_STATE_MESSAGE_TYPE, data);
             }
 
-            static Message make_homing_state_response_message(){ //TODO: complete
-                const char data[0] = {};
-                return Message(CONFIGURE_RESPONSE_MESSAGE_TYPE, data);
+            static Message make_homing_state_response_message(uint8_t enum_idx){ //TODO: complete
+                const char data[1] = { (char) enum_idx };
+                return Message(HOMING_STATE_RESPONSE_MESSAGE_TYPE, data);
             }
 
     };

@@ -62,6 +62,7 @@ void loop() {
 
 void write_message(protocol::Message message) {
   Serial.write((const uint8_t *)message.message, (int)message.get_message_type().get_message_size());
+  Serial.flush();
 }
 
 void control( void * pvParameters ) {
@@ -74,12 +75,6 @@ void control( void * pvParameters ) {
     do_safely_sharing_data(pull_protocol_configuration);
     if (controller_data.actions.do_homing) {
       rotary_homer.loop(rotary_stepper);
-    }
-    esp_task_wdt_feed();
-    step++;
-    if (step > 4) {
-      vTaskDelay(xDelay);
-      step = 0;
     }
   }
 }
@@ -100,7 +95,7 @@ void communication( void * pvParameters ) {
           auto activate_homing = [&] () { protocol_data.actions.do_homing = true; };
           do_safely_sharing_data(activate_homing);
           protocol::Message message_return = protocol::Message::make_homing_response_message();
-          Serial.write((const uint8_t *)message_return.message, (int)message_return.get_message_type().get_message_size());
+          write_message(message_return);
         } else if(message.get_message_type() == protocol::CONFIGURE_MESSAGE_TYPE){
           bool dir_high_is_clockwise = message.message[0 + protocol::MESSAGE_DATA_OFFSET_IN_BYTES];
           uint8_t direction_pin = message.message[1 + protocol::MESSAGE_DATA_OFFSET_IN_BYTES];
@@ -113,12 +108,13 @@ void communication( void * pvParameters ) {
           };
           do_safely_sharing_data(copy_configuration);
           protocol::Message message_return = protocol::Message::make_configure_response_message();
-          Serial.write((const uint8_t *)message_return.message, (int)message_return.get_message_type().get_message_size());
+          write_message(message_return);
+        } else if(message.get_message_type() == protocol::HOMING_STATE_MESSAGE_TYPE){          
+          uint8_t homing_state_index = rotary_homer.homing_state;
+          protocol::Message message_return = protocol::Message::make_homing_state_response_message(homing_state_index);
+          write_message(message_return);          
         }
       }
     }
-    esp_task_wdt_feed();
-    vTaskDelay(xDelay);
-    taskYIELD();
   }
 }
