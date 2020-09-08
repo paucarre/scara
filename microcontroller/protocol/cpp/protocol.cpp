@@ -1,5 +1,4 @@
 #include "protocol.hpp"
-#include <iostream>
 
 namespace protocol {
 
@@ -11,36 +10,37 @@ namespace protocol {
         return checksum;
     }
 
+
     uint8_t MessageFactory::write_message_data(MessageType message_type, const char* data, char* message_out) {
         uint8_t escaped_bytes = 0;
         message_out[0] = Parser::START_FLAG;
         message_out[1] = message_type.get_label();
-        uint8_t i = 2;
-        for(; i < message_type.get_data_length() + escaped_bytes + 2;){
-            //std::cout << (int) data[i] << std::endl;
-            if(Parser::is_flag(data[i])) {
-                message_out[i] = Parser::ESCAPE_FLAG;
+        uint8_t message_index = 2;
+        uint8_t data_index = 0;
+        for(; data_index < message_type.get_data_length();){
+            if(Parser::is_flag(data[data_index])) {
+                message_out[message_index] = Parser::ESCAPE_FLAG;
                 escaped_bytes ++;
-                i++;
+                message_index ++;
             }
-            message_out[i] = data[i - 2];
-            i++;
+            message_out[message_index] = data[data_index];
+            message_index++;
+            data_index++;
         }
         char checksum = make_checksum(message_type, message_out,  2, message_type.get_data_length() + 3);
-        if(Parser::is_flag(data[i])) {
-            message_out[i] = Parser::ESCAPE_FLAG;
+        if(Parser::is_flag(checksum)) {
+            message_out[message_index] = Parser::ESCAPE_FLAG;
             escaped_bytes ++;
-            i++;
+            message_index ++;
         }
-        message_out[i] = checksum;
-        message_out[i + 1] = Parser::END_FLAG;
+        message_out[message_index] = checksum;
+        message_out[message_index + 1] = Parser::END_FLAG;
         return escaped_bytes;
     }
 
 
-    ParsingError Parser::validate_checksum(MessageType message_type, uint8_t parsed_checksum) {
+    ParsingError Parser::validate_checksum(uint8_t computed_checksum, uint8_t parsed_checksum) {
         ParsingError parsing_error = ParsingError::NO_ERROR;
-        uint8_t computed_checksum = MessageFactory::make_checksum(message_type, parsed_data, 0, data_index);
         if(parsed_checksum == computed_checksum) {
             //std::cout << "good checksum" << std::endl;
             state = ParsingState::FINDING_END_FLAG;
@@ -80,19 +80,23 @@ namespace protocol {
                     } else {
                         state = ParsingState::PARSING_MESSAGE;
                         data_index = 0;
+                        checksum = message_type.get_label();
                         //parsed_data[data_index] = data;
                         //std::cout << "parsed data " << (int)data << std::endl;
                         //data_index++;
                         previous_data_was_escaped = false;
+
                     }
                     break;
                 }
             case ParsingState::PARSING_MESSAGE:
                 {
+                    //std::cout << (int) data << std::endl;
                     if(data_index == message_type.get_data_length()){
                          //std::cout << "validating checksum  " << std::endl;
-                        parsing_error = validate_checksum(message_type, data);
+                        parsing_error = validate_checksum(checksum, data);
                     } else {
+                         checksum = checksum ^ data;
                         if(previous_data_was_escaped){
                             parsed_data[data_index++] = data;
                             //std::cout << "parsed data " << (int)data << std::endl;
@@ -103,7 +107,7 @@ namespace protocol {
                                 previous_data_was_escaped = true;
                             } else {
                                 parsed_data[data_index++] = data;
-                                //std::cout << "parsed data " << (int)data << std::endl;
+                                //std::cout << "parsed data not escape " << (int)data << std::endl;
                                 previous_data_was_escaped = false;
                             }
                         }
@@ -138,6 +142,9 @@ namespace protocol {
 
     Message::Message(MessageType message_type_, const char* data_): message_type(message_type_) {
         escaped_bytes = protocol::MessageFactory::write_message_data(message_type, data_, message);
+        for(uint8_t idx = 0; idx < message_type.get_data_length() ; idx ++){
+            data[idx] = data_[idx];
+        }
     }
 
     char Message::get_byte_at(uint8_t byte_index) {

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdint.h>
+//#include <iostream>
 
 namespace protocol {
 
@@ -73,6 +74,7 @@ namespace protocol {
 
         public:
             char message[MAXIMUM_MESSAGE_PLAYLOAD_BYTES] = {0};
+            char data[MAXIMUM_MESSAGE_PLAYLOAD_BYTES] = {0};
             Message(MessageType message_type_, const char* data_);
             Message(MessageType message_type_);
 
@@ -155,6 +157,7 @@ namespace protocol {
             char parsed_data[MAXIMUM_DATA_PLAYLOAD_BYTES];
             uint8_t data_index;
             bool previous_data_was_escaped = false;
+            char checksum;
             ParsingState state = ParsingState::FINDING_START_FLAG;
 
         public:
@@ -167,14 +170,14 @@ namespace protocol {
             Parser():state(ParsingState::FINDING_START_FLAG) {
             }
             ParsingResult parse_byte(char data);
-            ParsingError validate_checksum(MessageType message_type, uint8_t parsed_checksum);
+            ParsingError validate_checksum(uint8_t computed_checksum, uint8_t parsed_checksum);
             //ParsingError validate_checksum(uint8_t data);
             MessageType get_message_type() { return message_type; }
             ParsingState get_state() { return state; }
-            static bool is_flag(uint8_t byte){
+            static bool is_flag(char byte){
                 bool flag = false;
                 for(int i = 0; (!flag) && i < NUM_FLAGS;i++){
-                    flag = flag || byte == FLAGS[i];
+                    flag = flag || (byte == FLAGS[i]);
                 }
                 return flag;
             }
