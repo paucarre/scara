@@ -60,13 +60,16 @@ void write_message(protocol::Message message) {
 }
 
 void control( void * pvParameters ) {
- // esp_task_wdt_feed();
+  esp_task_wdt_feed();
+  const TickType_t xDelay = 1 / portTICK_PERIOD_MS;
+  const uint8_t notify_each = 5;
   SharedData controller_data;
   RotaryStepper rotary_stepper(false, 27, 26);  
   rotary_stepper.setup();
   RotaryHomer rotary_homer(CENTER_MAGNETIC_SENSOR_PIN, LEFT_MAGNETIC_SENSOR_PIN, RIGH_MAGNETIC_SENSOR_PIN);
   rotary_homer.setup(rotary_stepper);
-  for (;;) {
+  uint8_t loops_without_notification = 0;
+  for (;;) {    
     auto pull_protocol_configuration = [&] () { controller_data = shared_data; };
     do_safely_sharing_data(pull_protocol_configuration);
     if (controller_data.actions.do_homing) {
@@ -82,6 +85,13 @@ void control( void * pvParameters ) {
       auto configuration_finished = [&] () { shared_data.actions.do_configure = false; };
       do_safely_sharing_data(configuration_finished);
     }
+    if(loops_without_notification >= notify_each) {
+      vTaskDelay(xDelay);
+      taskYIELD();
+      loops_without_notification = 0;
+    } else {
+      loops_without_notification++;
+    }      
   }
 }
 
@@ -116,10 +126,10 @@ void communication( void * pvParameters ) {
           protocol::Message message_return = protocol::Message::make_configure_response_message();
           write_message(message_return);
         } else if(message.get_message_type() == protocol::HOMING_STATE_MESSAGE_TYPE){                   
-          //HomingState homing_state = HomingState::HOMING_NOT_STARTED;
-          //auto get_homing_state = [&homing_state, shared_data] () { homing_state = shared_data.homing_state; };
-          //do_safely_sharing_data(get_homing_state);
-          protocol::Message message_return = protocol::Message::make_homing_state_response_message(0x12);
+          HomingState homing_state = HomingState::HOMING_NOT_STARTED;
+          auto get_homing_state = [&homing_state, shared_data] () { homing_state = shared_data.homing_state; };
+          do_safely_sharing_data(get_homing_state);
+          protocol::Message message_return = protocol::Message::make_homing_state_response_message(homing_state);
           write_message(message_return);
         }
       }
