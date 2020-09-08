@@ -20,7 +20,7 @@ void RotaryHomer::check_end_stops(RotaryStepper &rotary_stepper){
     rotary_stepper.apply_direction(rotate_clockwise);
     for(uint8_t i = 0; (left_is_on() || right_is_on()) && i < 500; i ++){
         rotary_stepper.step();
-        delayMicroseconds(1000);
+        delayMicroseconds(3000);
     }
   }
 }

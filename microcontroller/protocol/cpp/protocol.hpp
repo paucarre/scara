@@ -29,14 +29,6 @@ namespace protocol {
                 data_length(data_length_) {
             }
 
-            int8_t get_message_size() {
-                return data_length + MESSAGE_OVERHEAD_IN_BYTES;
-            }
-
-            uint8_t get_body_size() {
-                // the body is data + label and the label occupies just one byte
-                return data_length + 1;
-            }
 
             uint8_t get_label() { return label; }
             uint8_t get_data_length() { return data_length; }
@@ -55,9 +47,9 @@ namespace protocol {
     class MessageFactory {
 
         public:
-            static char make_checksum(char* data, uint8_t lenght);
-            static void fill_message_data(char body[], MessageType message_type, char* message_out);
-            static void write_message_data(MessageType message_type, const char* data, char* message_out);
+            static char make_checksum(MessageType message_type, char* data, uint8_t begin, uint8_t end);
+            //static char make_checksum(char* data, uint8_t begin, uint8_t end);
+            static uint8_t write_message_data(MessageType message_type, const char* data, char* message_out);
     };
 
 
@@ -77,14 +69,17 @@ namespace protocol {
     class Message {
         private:
             MessageType message_type;
+            uint8_t escaped_bytes;
 
         public:
             char message[MAXIMUM_MESSAGE_PLAYLOAD_BYTES] = {0};
             Message(MessageType message_type_, const char* data_);
             Message(MessageType message_type_);
-            uint8_t get_message_size() {
-                return message_type.get_message_size();
+
+            uint8_t get_message_length() {
+                return escaped_bytes + message_type.get_data_length() + MESSAGE_OVERHEAD_IN_BYTES;
             }
+
             char get_byte_at(uint8_t byte_index);
             const char* get_bytes();
             MessageType get_message_type() {
@@ -114,7 +109,7 @@ namespace protocol {
                 return Message(HOMING_STATE_MESSAGE_TYPE, data);
             }
 
-            static Message make_homing_state_response_message(uint8_t enum_idx){ //TODO: complete
+            static Message make_homing_state_response_message(uint8_t enum_idx) {
                 const char data[1] = { (char) enum_idx };
                 return Message(HOMING_STATE_RESPONSE_MESSAGE_TYPE, data);
             }
@@ -166,14 +161,25 @@ namespace protocol {
             static const char START_FLAG = 0xAA;
             static const char ESCAPE_FLAG = 0xBB;
             static const char END_FLAG = 0xFF;
-            static const char constexpr FLAGS[] = { START_FLAG, END_FLAG, ESCAPE_FLAG };
+            static const char NUM_FLAGS = 3;
+            static const char constexpr FLAGS[NUM_FLAGS] = { START_FLAG, END_FLAG, ESCAPE_FLAG };
 
             Parser():state(ParsingState::FINDING_START_FLAG) {
             }
             ParsingResult parse_byte(char data);
-            ParsingError validate_checksum(uint8_t data);
+            ParsingError validate_checksum(MessageType message_type, uint8_t parsed_checksum);
+            //ParsingError validate_checksum(uint8_t data);
             MessageType get_message_type() { return message_type; }
             ParsingState get_state() { return state; }
+            static bool is_flag(uint8_t byte){
+                bool flag = false;
+                for(int i = 0; (!flag) && i < NUM_FLAGS;i++){
+                    flag = flag || byte == FLAGS[i];
+                }
+                return flag;
+            }
+
+
     };
 
 

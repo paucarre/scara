@@ -1,52 +1,60 @@
 #include "protocol.hpp"
+#include <iostream>
+
 namespace protocol {
 
-
-
-    char MessageFactory::make_checksum(char* data, uint8_t lenght) {
-        uint8_t checksum = 0;
-        for(uint8_t i = 0; i < lenght; i++){
+    char MessageFactory::make_checksum(MessageType message_type, char* data, uint8_t begin, uint8_t end) {
+        uint8_t checksum = message_type.get_label();
+        for(uint8_t i = begin; i < end; i++){
             checksum = checksum ^ data[i];
         }
         return checksum;
     }
 
-    void MessageFactory::fill_message_data(char body[], MessageType message_type, char* message_out) {
-        uint8_t body_size = message_type.get_body_size();
-        char checksum = make_checksum(body, body_size);
-        uint8_t message_size = message_type.get_message_size();
+    uint8_t MessageFactory::write_message_data(MessageType message_type, const char* data, char* message_out) {
+        uint8_t escaped_bytes = 0;
         message_out[0] = Parser::START_FLAG;
-        message_out[message_size - 2] = checksum;
-        message_out[message_size - 1] = Parser::END_FLAG;
-        for(uint8_t i = 0 ; i < body_size; i++) {
-            message_out[i + 1] = body[i];
+        message_out[1] = message_type.get_label();
+        uint8_t i = 2;
+        for(; i < message_type.get_data_length() + escaped_bytes + 2;){
+            //std::cout << (int) data[i] << std::endl;
+            if(Parser::is_flag(data[i])) {
+                message_out[i] = Parser::ESCAPE_FLAG;
+                escaped_bytes ++;
+                i++;
+            }
+            message_out[i] = data[i - 2];
+            i++;
         }
+        char checksum = make_checksum(message_type, message_out,  2, message_type.get_data_length() + 3);
+        if(Parser::is_flag(data[i])) {
+            message_out[i] = Parser::ESCAPE_FLAG;
+            escaped_bytes ++;
+            i++;
+        }
+        message_out[i] = checksum;
+        message_out[i + 1] = Parser::END_FLAG;
+        return escaped_bytes;
     }
 
-    void MessageFactory::write_message_data(MessageType message_type, const char* data, char* message_out) {
-        uint8_t body_size = message_type.get_body_size();
-        char body[body_size];
-        body[0] = message_type.get_label();
-        for(uint8_t i = 0; i < message_type.get_data_length(); i++){
-            body[i + 1] = data[i];
-        }
-        fill_message_data(body, message_type, message_out);
-    }
 
-
-    ParsingError Parser::validate_checksum(uint8_t parsed_checksum) {
+    ParsingError Parser::validate_checksum(MessageType message_type, uint8_t parsed_checksum) {
         ParsingError parsing_error = ParsingError::NO_ERROR;
-        uint8_t computed_checksum = MessageFactory::make_checksum(parsed_data, data_index);
+        uint8_t computed_checksum = MessageFactory::make_checksum(message_type, parsed_data, 0, data_index);
         if(parsed_checksum == computed_checksum) {
+            //std::cout << "good checksum" << std::endl;
             state = ParsingState::FINDING_END_FLAG;
         } else {
+            //std::cout << "bad checksum" << std::endl;
             parsing_error = ParsingError::CHECKSUM_VALIDATION_ERROR;
             state = ParsingState::FINDING_START_FLAG;
         }
         return parsing_error;
     }
 
+
     ParsingResult Parser::parse_byte(char data) {
+        //std::cout << "data " << (int)data << std::endl;
         ParsingError parsing_error = ParsingError::NO_ERROR;
         switch(state) {
             case ParsingState::FINDING_START_FLAG:
@@ -72,25 +80,30 @@ namespace protocol {
                     } else {
                         state = ParsingState::PARSING_MESSAGE;
                         data_index = 0;
-                        parsed_data[data_index] = data;
-                        data_index++;
+                        //parsed_data[data_index] = data;
+                        //std::cout << "parsed data " << (int)data << std::endl;
+                        //data_index++;
                         previous_data_was_escaped = false;
                     }
                     break;
                 }
             case ParsingState::PARSING_MESSAGE:
                 {
-                    if(data_index > message_type.get_data_length()){
-                        parsing_error = validate_checksum(data);
+                    if(data_index == message_type.get_data_length()){
+                         //std::cout << "validating checksum  " << std::endl;
+                        parsing_error = validate_checksum(message_type, data);
                     } else {
                         if(previous_data_was_escaped){
                             parsed_data[data_index++] = data;
+                            //std::cout << "parsed data " << (int)data << std::endl;
                             previous_data_was_escaped = false;
                         } else {
                             if(data == ESCAPE_FLAG){
+                                //std::cout << " ESCAPE FOUND "  << std::endl;
                                 previous_data_was_escaped = true;
                             } else {
                                 parsed_data[data_index++] = data;
+                                //std::cout << "parsed data " << (int)data << std::endl;
                                 previous_data_was_escaped = false;
                             }
                         }
@@ -102,6 +115,11 @@ namespace protocol {
                     state = ParsingState::FINDING_START_FLAG;
                     if(data == END_FLAG) {
                         Message message(message_type, parsed_data);
+                        //std::cout << "Final: " << std::endl;
+                        for(int i = 0;i < data_index;i++){
+                            //std::cout << (int) parsed_data[i];
+                        }
+                        //std::cout << std::endl;
                         return ParsingResult(state, parsing_error, message, true);
                     } else {
                         parsing_error = ParsingError::END_FLAG_NOT_FOUND;
@@ -118,8 +136,8 @@ namespace protocol {
         protocol::MessageFactory::write_message_data(message_type, empty_data, message);
     }
 
-    Message::Message(MessageType message_type_, const char* data_ ): message_type(message_type_) {
-        protocol::MessageFactory::write_message_data(message_type, data_, message);
+    Message::Message(MessageType message_type_, const char* data_): message_type(message_type_) {
+        escaped_bytes = protocol::MessageFactory::write_message_data(message_type, data_, message);
     }
 
     char Message::get_byte_at(uint8_t byte_index) {

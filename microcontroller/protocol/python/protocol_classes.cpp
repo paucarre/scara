@@ -10,8 +10,7 @@ void init_protocol(py::module &m) {
 
      py::class_<protocol::MessageType>(m, "MessageType")
           .def(py::init<const uint8_t, const uint8_t>())
-          .def("get_body_size", &protocol::MessageType::get_body_size)
-          .def("get_message_size", &protocol::MessageType::get_message_size)
+          .def("get_data_length", &protocol::MessageType::get_data_length)
           .def("__eq__", &protocol::MessageType::operator==, py::is_operator())
           .def("__ne__", &protocol::MessageType::operator!=, py::is_operator())
           .def("get_label", &protocol::MessageType::get_label);
@@ -44,10 +43,10 @@ void init_protocol(py::module &m) {
 
      py::class_<protocol::Message>(m, "Message")
           .def(py::init<protocol::MessageType, const char*>())
-          .def("get_message_size", &protocol::Message::get_message_size)
+          .def("get_message_length", &protocol::Message::get_message_length)
           .def("get_byte_at", &protocol::Message::get_byte_at)
           .def("get_bytes", [](protocol::Message message){
-               std::string message_as_string(message.message, message.get_message_size());
+               std::string message_as_string(message.message, message.get_message_length());
                return py::bytes(message_as_string);
           })
           .def("get_data", [](protocol::Message message){
