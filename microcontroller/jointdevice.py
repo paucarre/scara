@@ -40,7 +40,7 @@ class JointDevice():
             bytes_written = self.serial_handler.write(message_bytes)
             self.serial_handler.flush()
             if bytes_written == len(message_bytes):
-                print(message_bytes)
+                #print(message_bytes)
                 return Success(f'Message successfully sent')
             else:
                 return Failure(f'Error writting message bytes')
@@ -90,9 +90,13 @@ joints = [angular_joint_1_device]
 for joint in joints:
     joint.open()
     result = joint.home()
+    print(result)
     #print('HOME: ', result)
     time.sleep(1.5)
-    result = joint.get_home_state()
+    while True:
+        result = joint.get_home_state()
+        print(result)
+        time.sleep(0.5)
     #while True:
     #result = joint.get_home_state()
     #print('HOME STATE: ', result)

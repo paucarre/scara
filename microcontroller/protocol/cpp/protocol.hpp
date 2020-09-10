@@ -78,6 +78,10 @@ namespace protocol {
             Message(MessageType message_type_, const char* data_);
             Message(MessageType message_type_);
 
+            char* get_data(){
+                return data;
+            }
+
             uint8_t get_message_length() {
                 return escaped_bytes + message_type.get_data_length() + MESSAGE_OVERHEAD_IN_BYTES;
             }

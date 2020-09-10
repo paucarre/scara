@@ -120,9 +120,9 @@ namespace protocol {
                     if(data == END_FLAG) {
                         Message message(message_type, parsed_data);
                         //std::cout << "Final: " << std::endl;
-                        for(int i = 0;i < data_index;i++){
+                        //for(int i = 0;i < data_index;i++){
                             //std::cout << (int) parsed_data[i];
-                        }
+                        //}
                         //std::cout << std::endl;
                         return ParsingResult(state, parsing_error, message, true);
                     } else {
@@ -141,10 +141,10 @@ namespace protocol {
     }
 
     Message::Message(MessageType message_type_, const char* data_): message_type(message_type_) {
-        escaped_bytes = protocol::MessageFactory::write_message_data(message_type, data_, message);
         for(uint8_t idx = 0; idx < message_type.get_data_length() ; idx ++){
             data[idx] = data_[idx];
         }
+        escaped_bytes = protocol::MessageFactory::write_message_data(message_type, data_, message);
     }
 
     char Message::get_byte_at(uint8_t byte_index) {
