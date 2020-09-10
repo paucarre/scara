@@ -1,4 +1,5 @@
 #include "../cpp/protocol.hpp"
+#include "../../libs/homing_state.hpp"
 
 #include <pybind11/stl.h>
 #include <pybind11/pybind11.h>
@@ -20,6 +21,18 @@ void init_protocol(py::module &m) {
           .value("FINDING_MESSAGE_LABEL", protocol::ParsingState::FINDING_MESSAGE_LABEL)
           .value("PARSING_MESSAGE", protocol::ParsingState::PARSING_MESSAGE)
           .value("FINDING_END_FLAG", protocol::ParsingState::FINDING_END_FLAG);
+
+     py::enum_<HomingState>(m, "HomingState", py::arithmetic())
+          .value("HOMING_NOT_STARTED", HomingState::HOMING_NOT_STARTED)
+          .value("MOVE_UNTIL_NO_SENSOR_READ", HomingState::MOVE_UNTIL_NO_SENSOR_READ)
+          .value("FIND_FIRST_SENSOR_READ", HomingState::FIND_FIRST_SENSOR_READ)
+          .value("READ_UNITIL_SENSOR_NO_LONGER_SENSES", HomingState::READ_UNITIL_SENSOR_NO_LONGER_SENSES)
+          .value("REVERSE_DIRECTION_HALF_THE_STEPS", HomingState::REVERSE_DIRECTION_HALF_THE_STEPS)
+          .value("HOMING_FINISHED", HomingState::HOMING_FINISHED)
+          .def_static("from_index", [](std::string index_string) -> HomingState {
+               int index = index_string.data()[0];
+               return static_cast<HomingState>(index);
+          });
 
      py::enum_<protocol::ParsingError>(m, "ParsingError", py::arithmetic())
         .value("NO_ERROR", protocol::ParsingError::NO_ERROR)
@@ -50,9 +63,9 @@ void init_protocol(py::module &m) {
                return py::bytes(message_as_string);
           })
           .def("get_data", [](protocol::Message message){
-               char data[protocol::MAXIMUM_MESSAGE_PLAYLOAD_BYTES] = {0};
+               char data[protocol::MAXIMUM_DATA_PLAYLOAD_BYTES] = {0};
                for(int i = 0;i < message.get_message_type().get_data_length();i++){
-                    data[i] = message.data[i + protocol::MESSAGE_DATA_OFFSET_IN_BYTES];
+                    data[i] = message.data[i];
                }
                std::string data_as_string(data, message.get_message_type().get_data_length());
                return py::bytes(data_as_string);

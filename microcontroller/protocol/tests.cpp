@@ -167,9 +167,44 @@ void return_homing_state_creation_message_with_flags_in_data_test() {
         assert(message.message[idx] == parse_result.get_message().message[idx]);
     }
 
+    char expected_data[1] = {(char)0xAA};
+    for(uint32_t idx = 0; idx < message.get_message_type().get_data_length(); idx++){
+        assert(message.data[idx] == parse_result.get_message().data[idx]);
+        assert(expected_data[idx] == parse_result.get_message().data[idx]);
+    }
+
     std::cout << "SUCCESS -- RETURN HOME STATE MESSAGE CREATION" << std::endl;
 }
 
+void return_homing_state_creation_message_parsing() {
+    Message message = Message::make_homing_state_response_message(0x02);
+    char expected_message[6] = { (char)0xAA, (char)0x06, (char)0x02, (char)0x04, (char) 0xFF };
+    assert(message.message[0] == expected_message[0]);
+    assert(message.message[1] == expected_message[1]);
+    assert(message.message[2] == expected_message[2]);
+    assert(message.message[3] == expected_message[3]);
+    assert(message.message[4] == expected_message[4]);
+    assert(message.get_message_length() == 5);
+
+    ParsingResult parse_result;
+    Parser parser;
+    for(uint32_t idx = 0; idx < message.get_message_length(); idx++){
+        parse_result = parser.parse_byte(message.message[idx]);
+    }
+    assert(parse_result.get_is_parsed());
+    assert(parse_result.get_message().get_message_type() == message.get_message_type());
+    for(uint32_t idx = 0; idx < message.get_message_length(); idx++){
+        assert(message.message[idx] == parse_result.get_message().message[idx]);
+    }
+
+    char expected_data[1] = {(char)0x02};
+    for(uint32_t idx = 0; idx < message.get_message_type().get_data_length(); idx++){
+        assert(message.data[idx] == parse_result.get_message().data[idx]);
+        assert(expected_data[idx] == parse_result.get_message().data[idx]);
+    }
+
+    std::cout << "SUCCESS -- RETURN HOME STATE MESSAGE CREATION" << std::endl;
+}
 
 void protocol_test() {
     Parser parser;
@@ -208,5 +243,6 @@ int main(int argc, char **argv) {
     return_homing_state_creation_message_test();
     protocol_test();
     return_homing_state_creation_message_with_flags_in_data_test();
+    return_homing_state_creation_message_parsing();
     return 0;
 }

@@ -48,7 +48,7 @@ void RotaryHomer::loop(RotaryStepper &rotary_stepper){
         }
       }
     } else {
-      if(homing_state == MOVE_UNTIL_NO_SENSOR_READ) {
+      if(homing_state == HomingState::MOVE_UNTIL_NO_SENSOR_READ) {
         rotate_clockwise = ! rotate_clockwise;
         rotary_stepper.apply_direction(rotate_clockwise);
         homing_state = HomingState::FIND_FIRST_SENSOR_READ;

@@ -74,7 +74,7 @@ namespace protocol {
 
         public:
             char message[MAXIMUM_MESSAGE_PLAYLOAD_BYTES] = {0};
-            char data[MAXIMUM_MESSAGE_PLAYLOAD_BYTES] = {0};
+            char data[MAXIMUM_DATA_PLAYLOAD_BYTES] = {0};
             Message(MessageType message_type_, const char* data_);
             Message(MessageType message_type_);
 

@@ -20,12 +20,12 @@ class JointDevice():
         while current_attempt < MAX_ATTEMTS:
             if self.serial_handler.in_waiting > 0:
                 received_byte = self.serial_handler.read()
-                print(received_byte)
+                #print(received_byte)
                 parsing_result = self.parser.parse_byte(received_byte)
                 if parsing_result.is_parsed():
                     message = parsing_result.get_message()
                     if(message.get_message_type() == expected_response_type):
-                        print(message.get_bytes())
+                        #print(message.get_bytes())
                         return Success(message)
                     else:
                         return Failure(f'Wrong message type returned. Expected {expected_response_type.get_label()} but received {message.get_message_type().get_label()}')
@@ -71,7 +71,7 @@ class JointDevice():
         home_state_result = home_state_result.bind(lambda message: \
             self._try_to_get_response(protocol.HOMING_STATE_RESPONSE_MESSAGE_TYPE))
         home_state_result = home_state_result.map(lambda message: \
-            message.get_data()).value_or(None)
+            protocol.HomingState.from_index(message.get_data())).value_or(None)
         return home_state_result
 
     def close(self):
@@ -90,14 +90,9 @@ joints = [angular_joint_1_device]
 for joint in joints:
     joint.open()
     result = joint.home()
-    print(result)
-    #print('HOME: ', result)
     time.sleep(1.5)
-    while True:
+    result = protocol.HomingState.HOMING_NOT_STARTED
+    while result != protocol.HomingState.HOMING_FINISHED:
         result = joint.get_home_state()
-        print(result)
-        time.sleep(0.5)
-    #while True:
-    #result = joint.get_home_state()
-    #print('HOME STATE: ', result)
-    #joint.close()
+        print('Homing State: ', result)
+    joint.close()

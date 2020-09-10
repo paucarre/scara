@@ -25,7 +25,7 @@ struct ActionsData {
 
 struct SharedData {
   ActionsData  actions;
-  HomingState homing_state = HOMING_NOT_STARTED;
+  HomingState homing_state = HomingState::HOMING_NOT_STARTED;
   ConfigurationData configuration;
 };
 
@@ -123,10 +123,10 @@ void communication( void * pvParameters ) {
           protocol::Message message_return = protocol::Message::make_configure_response_message();
           write_message(message_return);
         } else if(message.get_message_type() == protocol::HOMING_STATE_MESSAGE_TYPE){                   
-          HomingState homing_state = HomingState::HOMING_NOT_STARTED;
-          auto get_homing_state = [&homing_state, &shared_data] () { homing_state = shared_data.homing_state; };
+          int32_t homing_state = static_cast<int>(HomingState::HOMING_NOT_STARTED);
+          auto get_homing_state = [&homing_state, &shared_data] () { homing_state = static_cast<int>(shared_data.homing_state); };
           do_safely_sharing_data(get_homing_state);
-          protocol::Message message_return = protocol::Message::make_homing_state_response_message(homing_state);
+          protocol::Message message_return = protocol::Message::make_homing_state_response_message((char)(0x000F & homing_state));
           write_message(message_return);
         }
       }
