@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <Arduino.h>
 #include "rotary_stepper.hpp"
-#include "homing_states.hpp"
+#include "homing_state.hpp"
 
 class RotaryHomer {
   private:

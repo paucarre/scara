@@ -19,8 +19,8 @@ void RotaryStepper::apply_direction(bool rotate_clockwise) {
   }
 }
 
-void RotaryStepper::set_current_step_as_zero() {
-  current_step = 0;
+void RotaryStepper::set_steps_to_zero() {
+  steps = 0;
 }
 
 void RotaryStepper::step() {
@@ -29,8 +29,8 @@ void RotaryStepper::step() {
   digitalWrite(this->step_pin, LOW);
   delayMicroseconds(50);
   if(direction_pin_state_is_clockwise){
-    current_step ++;
+    steps ++;
   } else {
-    current_step --;
+    steps --;
   }
 }

@@ -1,7 +1,13 @@
 #include "rotary_homer.hpp"
 
 bool RotaryHomer::center_is_on() {
-  return digitalRead(center_magnetic_sensor_pin);
+    int attempts_strong_signal = 1000;
+    bool is_on = true;
+    // Veryfy the signal is strong
+    for(int attempts = 0; is_on && attempts < attempts_strong_signal;attempts++) {
+      is_on = digitalRead(center_magnetic_sensor_pin);
+    }
+    return is_on;
 }
 
 bool RotaryHomer::left_is_on() {
@@ -45,6 +51,7 @@ void RotaryHomer::loop(RotaryStepper &rotary_stepper){
           half_steps_backward_left --;
         } else {
           homing_state = HomingState::HOMING_FINISHED;
+          rotary_stepper.set_steps_to_zero();
         }
       }
     } else {

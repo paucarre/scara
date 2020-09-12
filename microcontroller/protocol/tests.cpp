@@ -206,7 +206,7 @@ void return_homing_state_creation_message_parsing() {
     std::cout << "SUCCESS -- RETURN HOME STATE MESSAGE CREATION" << std::endl;
 }
 
-void protocol_test() {
+void homing_state_creation_message_parsing() {
     Parser parser;
     ParsingResult parse_result;
 
@@ -231,7 +231,32 @@ void protocol_test() {
     for(uint32_t idx = 0; idx < homing_state_message.get_message_length(); idx++){
         assert(homing_state_message.message[idx] == parse_result.get_message().message[idx]);
     }
-    std::cout << "SUCCESS -- PROTOCOL MESSAGE SEQUENCE TEST" << std::endl;
+    std::cout << "SUCCESS -- HOMING RESPONSE AND HOMING STATE RESPONSE MESSAGE SEQUENCE TEST" << std::endl;
+}
+
+
+void get_steps_response_creation_message_parsing(int16_t steps) {
+    Parser parser;
+    ParsingResult parse_result;
+    Message get_steps_return_message = Message::make_get_steps_response_message(steps);
+    //print_message(homing_message);
+    for(uint32_t idx = 0; idx < get_steps_return_message.get_message_length(); idx++){
+        parse_result = parser.parse_byte(get_steps_return_message.message[idx]);
+        //std::cout  << (int) homing_message.message[idx] << ": " << static_cast<int>(parse_result.get_state()) << std::endl;
+    }
+    assert(parse_result.get_is_parsed());
+    assert(parse_result.get_message().get_message_type() == get_steps_return_message.get_message_type());
+
+    for(uint32_t idx = 0; idx < get_steps_return_message.get_message_length(); idx++){
+        assert(get_steps_return_message.message[idx] == parse_result.get_message().message[idx]);
+    }
+
+    int16_t steps_in_message = Message::make_int16_from_two_bytes(get_steps_return_message.get_data()[0], get_steps_return_message.get_data()[1]);
+    assert(steps_in_message == steps);
+    int16_t steps_in_parsed_message = Message::make_int16_from_two_bytes(parse_result.get_message().get_data()[0], parse_result.get_message().get_data()[1]);
+    assert(steps_in_parsed_message == steps);
+
+    std::cout << "SUCCESS -- GET SETEPS RESPONSE MESSAGE TEST FOR STEPS: " << steps << std::endl;
 }
 
 int main(int argc, char **argv) {
@@ -241,8 +266,12 @@ int main(int argc, char **argv) {
     return_home_creation_message_test();
     configure_message_test();
     return_homing_state_creation_message_test();
-    protocol_test();
+    homing_state_creation_message_parsing();
     return_homing_state_creation_message_with_flags_in_data_test();
     return_homing_state_creation_message_parsing();
+    get_steps_response_creation_message_parsing(-30000);
+    get_steps_response_creation_message_parsing(30000);
+    get_steps_response_creation_message_parsing(-30);
+    get_steps_response_creation_message_parsing(30);
     return 0;
 }

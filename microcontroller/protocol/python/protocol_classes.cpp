@@ -76,6 +76,8 @@ void init_protocol(py::module &m) {
           .def_static("make_configure_message", &protocol::Message::make_configure_message)
           .def_static("make_configure_response_message", &protocol::Message::make_configure_response_message)
           .def_static("make_homing_state_message", &protocol::Message::make_homing_state_message)
+          .def_static("make_get_steps_message", &protocol::Message::make_get_steps_message)
+          .def_static("make_int16_from_two_bytes", &protocol::Message::make_int16_from_two_bytes)
           .def_static("make_homing_state_response_message", &protocol::Message::make_homing_state_response_message);
 
      py::class_<protocol::Parser>(m, "Parser")
@@ -99,5 +101,7 @@ void init_protocol(py::module &m) {
      m.attr("CONFIGURE_RESPONSE_MESSAGE_TYPE") = py::cast(protocol::CONFIGURE_RESPONSE_MESSAGE_TYPE);
      m.attr("HOMING_STATE_MESSAGE_TYPE") = py::cast(protocol::HOMING_STATE_MESSAGE_TYPE);
      m.attr("HOMING_STATE_RESPONSE_MESSAGE_TYPE") = py::cast(protocol::HOMING_STATE_RESPONSE_MESSAGE_TYPE);
+     m.attr("GET_STEPS_MESSAGE_TYPE") = py::cast(protocol::GET_STEPS_MESSAGE_TYPE);
+     m.attr("GET_STEPS_RESPONSE_MESSAGE_TYPE") = py::cast(protocol::GET_STEPS_RESPONSE_MESSAGE_TYPE);
 
 }

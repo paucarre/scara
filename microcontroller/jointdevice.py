@@ -40,7 +40,6 @@ class JointDevice():
             bytes_written = self.serial_handler.write(message_bytes)
             self.serial_handler.flush()
             if bytes_written == len(message_bytes):
-                #print(message_bytes)
                 return Success(f'Message successfully sent')
             else:
                 return Failure(f'Error writting message bytes')

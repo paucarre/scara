@@ -23,10 +23,15 @@ struct ActionsData {
   bool do_configure = false;
 };
 
+struct ControlData {
+  int16_t steps = 0;
+};
+
 struct SharedData {
   ActionsData  actions;
   HomingState homing_state = HomingState::HOMING_NOT_STARTED;
   ConfigurationData configuration;
+  ControlData control;
 };
 
 SharedData shared_data;
@@ -69,7 +74,7 @@ void control( void * pvParameters ) {
   rotary_homer.setup(rotary_stepper);
   uint8_t loops_without_notification = 0;
   for (;;) {
-    delay(1);  
+    delayMicroseconds(100);  
     TIMERG0.wdt_wprotect=TIMG_WDT_WKEY_VALUE;
     TIMERG0.wdt_feed=1;
     TIMERG0.wdt_wprotect=0;
@@ -88,6 +93,9 @@ void control( void * pvParameters ) {
       auto configuration_finished = [&shared_data] () { shared_data.actions.do_configure = false; };
       do_safely_sharing_data(configuration_finished);
     }
+    int16_t steps = rotary_stepper.get_steps();
+    auto update_steps = [&shared_data, &steps] () { shared_data.control.steps = steps; };
+    do_safely_sharing_data(update_steps);
   }
 }
 
@@ -127,6 +135,11 @@ void communication( void * pvParameters ) {
           auto get_homing_state = [&homing_state, &shared_data] () { homing_state = static_cast<int>(shared_data.homing_state); };
           do_safely_sharing_data(get_homing_state);
           protocol::Message message_return = protocol::Message::make_homing_state_response_message((char)(0x000F & homing_state));
+          write_message(message_return);
+        } else if(message.get_message_type() == protocol::GET_STEPS_MESSAGE_TYPE) {
+          int16_t steps = 0;
+          auto update_steps = [&shared_data, &steps] () { steps = shared_data.control.steps; };
+          protocol::Message message_return = protocol::Message::make_get_steps_response_message(steps);
           write_message(message_return);
         }
       }
