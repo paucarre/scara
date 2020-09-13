@@ -73,6 +73,15 @@ class JointDevice():
             protocol.HomingState.from_index(message.get_data())).value_or(None)
         return home_state_result
 
+    def set_target_steps(self, steps):
+        message = protocol.Message.make_set_target_steps_message(steps)
+        result = self._try_to_send_message(message)
+        result = result.bind(lambda message: \
+            self._try_to_get_response(protocol.SET_TARGET_STEPS_RESPONSE_MESSAGE_TYPE))
+        result = result.map(lambda message: \
+            protocol.HomingState.from_index(message.get_data())).value_or(None)
+        return result
+
     def close(self):
         self.serial_handler.close()
 
@@ -94,4 +103,10 @@ for joint in joints:
     while result != protocol.HomingState.HOMING_FINISHED:
         result = joint.get_home_state()
         print('Homing State: ', result)
-    joint.close()
+    result = joint.set_target_steps(-10000)
+    print(result)
+    time.sleep(10)
+
+
+
+joint.close()

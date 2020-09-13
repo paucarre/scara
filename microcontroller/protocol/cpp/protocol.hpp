@@ -62,13 +62,16 @@ namespace protocol {
     static MessageType HOMING_STATE_RESPONSE_MESSAGE_TYPE = MessageType(0x06, 1);
     static MessageType GET_STEPS_MESSAGE_TYPE = MessageType(0x07, 0);
     static MessageType GET_STEPS_RESPONSE_MESSAGE_TYPE = MessageType(0x08, 2);
+    static MessageType SET_TARGET_STEPS_MESSAGE_TYPE = MessageType(0x09, 2);
+    static MessageType SET_TARGET_STEPS_RESPONSE_MESSAGE_TYPE = MessageType(0x0A, 0);
     static MessageType UNDEFINED_MESSAGE_TYPE = MessageType(0xCC, 0);
-    static const uint8_t NUMBER_OF_MESSAGES = 8;
+    static const uint8_t NUMBER_OF_MESSAGES = 10;
     static MessageType MESSAGES[NUMBER_OF_MESSAGES] = {
         HOME_MESSAGE_TYPE, HOME_RESPONSE_MESSAGE_TYPE,
         CONFIGURE_MESSAGE_TYPE, CONFIGURE_RESPONSE_MESSAGE_TYPE,
         HOMING_STATE_MESSAGE_TYPE, HOMING_STATE_RESPONSE_MESSAGE_TYPE,
-        GET_STEPS_MESSAGE_TYPE, GET_STEPS_RESPONSE_MESSAGE_TYPE};
+        GET_STEPS_MESSAGE_TYPE, GET_STEPS_RESPONSE_MESSAGE_TYPE,
+        SET_TARGET_STEPS_MESSAGE_TYPE, SET_TARGET_STEPS_RESPONSE_MESSAGE_TYPE};
 
     class Message {
         private:
@@ -133,10 +136,21 @@ namespace protocol {
                 return Message(GET_STEPS_RESPONSE_MESSAGE_TYPE, data);
             }
 
+            static Message make_set_target_steps_message(int16_t steps) {
+                const char data[2] = { (char) (steps >> 8) & 0x00FF, (char) steps & 0x00FF };
+                return Message(SET_TARGET_STEPS_MESSAGE_TYPE, data);
+            }
+
+            static Message make_set_target_steps_response_message() {
+                const char data[0] = { };
+                return Message(SET_TARGET_STEPS_RESPONSE_MESSAGE_TYPE, data);
+            }
+
             static int16_t make_int16_from_two_bytes(char byte_1, char byte_2) {
                 const int16_t data  = ((byte_1 << 8) & 0xFF00) + (byte_2 & 0x00FF);
                 return data;
             }
+
 
     };
 

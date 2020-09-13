@@ -29,8 +29,8 @@ void RotaryStepper::step() {
   digitalWrite(this->step_pin, LOW);
   delayMicroseconds(50);
   if(direction_pin_state_is_clockwise){
-    steps ++;
-  } else {
     steps --;
+  } else {
+    steps ++;
   }
 }

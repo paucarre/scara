@@ -1,3 +1,4 @@
+#pragma once
 enum class HomingState {
           HOMING_NOT_STARTED,
           MOVE_UNTIL_NO_SENSOR_READ,

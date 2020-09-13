@@ -1,5 +1,7 @@
 #include "rotary_stepper.hpp"
 #include "rotary_homer.hpp"
+#include "rotary_controller.hpp"
+#include "shared_data.hpp"
 #include "protocol.hpp"
 
 
@@ -7,38 +9,15 @@
 #include "soc/timer_group_reg.h"
 
 
-
 #define CENTER_MAGNETIC_SENSOR_PIN 13
 #define LEFT_MAGNETIC_SENSOR_PIN 14
 #define RIGH_MAGNETIC_SENSOR_PIN 12
 
-struct ConfigurationData {
-  bool dir_high_is_clockwise = false;
-  uint8_t direction_pin = 27;
-  uint8_t step_pin = 26;
-};
-
-struct ActionsData {
-  bool do_homing = false;
-  bool do_configure = false;
-};
-
-struct ControlData {
-  int16_t steps = 0;
-};
-
-struct SharedData {
-  ActionsData  actions;
-  HomingState homing_state = HomingState::HOMING_NOT_STARTED;
-  ConfigurationData configuration;
-  ControlData control;
-};
 
 SharedData shared_data;
-
 SemaphoreHandle_t mutex;
-
 protocol::Parser parser;
+RotaryController rotary_controller;
 
 template<typename F>
 void do_safely_sharing_data(F &lambda) {
@@ -96,6 +75,10 @@ void control( void * pvParameters ) {
     int16_t steps = rotary_stepper.get_steps();
     auto update_steps = [&shared_data, &steps] () { shared_data.control.steps = steps; };
     do_safely_sharing_data(update_steps);
+    if(controller_data.homing_state == HomingState::HOMING_FINISHED) {
+      rotary_controller.set_target_steps(shared_data.control.target_steps);
+      rotary_controller.control(rotary_stepper);
+    }
   }
 }
 
@@ -118,9 +101,9 @@ void communication( void * pvParameters ) {
           protocol::Message message_return = protocol::Message::make_homing_response_message();
           write_message(message_return);
         } else if(message.get_message_type() == protocol::CONFIGURE_MESSAGE_TYPE){
-          bool dir_high_is_clockwise = message.message[0 + protocol::MESSAGE_DATA_OFFSET_IN_BYTES];
-          uint8_t direction_pin = message.message[1 + protocol::MESSAGE_DATA_OFFSET_IN_BYTES];
-          uint8_t step_pin = message.message[2 + protocol::MESSAGE_DATA_OFFSET_IN_BYTES];
+          bool dir_high_is_clockwise = message.data[0];
+          uint8_t direction_pin = message.data[1];
+          uint8_t step_pin = message.data[2];
           auto copy_configuration = [&, dir_high_is_clockwise, direction_pin, step_pin] () {
             shared_data.configuration.dir_high_is_clockwise = dir_high_is_clockwise;
             shared_data.configuration.direction_pin = direction_pin;
@@ -139,7 +122,16 @@ void communication( void * pvParameters ) {
         } else if(message.get_message_type() == protocol::GET_STEPS_MESSAGE_TYPE) {
           int16_t steps = 0;
           auto update_steps = [&shared_data, &steps] () { steps = shared_data.control.steps; };
+          do_safely_sharing_data(update_steps);
           protocol::Message message_return = protocol::Message::make_get_steps_response_message(steps);
+          write_message(message_return);
+        } else if(message.get_message_type() == protocol::SET_TARGET_STEPS_MESSAGE_TYPE) {
+          char byte1 = message.data[0];
+          char byte2 = message.data[1];
+          int16_t target_steps = protocol::Message::make_int16_from_two_bytes(byte1, byte2);          
+          auto update_target_steps = [&shared_data, &target_steps] () { shared_data.control.target_steps = target_steps; };          
+          do_safely_sharing_data(update_target_steps);
+          protocol::Message message_return = protocol::Message::make_set_target_steps_response_message();
           write_message(message_return);
         }
       }
