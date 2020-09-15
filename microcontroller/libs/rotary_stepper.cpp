@@ -34,3 +34,26 @@ void RotaryStepper::step() {
     steps ++;
   }
 }
+
+void RotaryStepper::configure(bool dir_high_is_clockwise_, uint16_t direction_pin_, uint16_t step_pin_) {
+  this->dir_high_is_clockwise = dir_high_is_clockwise_;
+  this->direction_pin = direction_pin_;
+  this->step_pin = step_pin_;
+  apply_direction(true);
+}
+
+uint16_t RotaryStepper::get_step_pin() {
+  return step_pin;
+}
+
+uint16_t RotaryStepper::get_direction_pin() {
+  return direction_pin;
+}
+
+int16_t RotaryStepper::get_steps() {
+  return steps;
+}
+
+bool RotaryStepper::get_dir_high_is_clockwise() {
+  return this->dir_high_is_clockwise;
+}

@@ -57,21 +57,25 @@ namespace protocol {
     static MessageType HOME_MESSAGE_TYPE = MessageType(0x01, 0);
     static MessageType HOME_RESPONSE_MESSAGE_TYPE = MessageType(0x02, 0);
     static MessageType CONFIGURE_MESSAGE_TYPE = MessageType(0x03, 3);
-    static MessageType CONFIGURE_RESPONSE_MESSAGE_TYPE = MessageType(0x04, 0);
+    static MessageType CONFIGURE_RESPONSE_MESSAGE_TYPE = MessageType(0x04, 3);
     static MessageType HOMING_STATE_MESSAGE_TYPE = MessageType(0x05, 0);
     static MessageType HOMING_STATE_RESPONSE_MESSAGE_TYPE = MessageType(0x06, 1);
     static MessageType GET_STEPS_MESSAGE_TYPE = MessageType(0x07, 0);
     static MessageType GET_STEPS_RESPONSE_MESSAGE_TYPE = MessageType(0x08, 2);
     static MessageType SET_TARGET_STEPS_MESSAGE_TYPE = MessageType(0x09, 2);
     static MessageType SET_TARGET_STEPS_RESPONSE_MESSAGE_TYPE = MessageType(0x0A, 0);
+    static MessageType GET_CONFIGURATION_MESSAGE_TYPE = MessageType(0x0B, 0);
+    static MessageType GET_CONFIGURATION_RESPONSE_MESSAGE_TYPE = MessageType(0x0C, 3);
+
     static MessageType UNDEFINED_MESSAGE_TYPE = MessageType(0xCC, 0);
-    static const uint8_t NUMBER_OF_MESSAGES = 10;
+    static const uint8_t NUMBER_OF_MESSAGES = 12;
     static MessageType MESSAGES[NUMBER_OF_MESSAGES] = {
         HOME_MESSAGE_TYPE, HOME_RESPONSE_MESSAGE_TYPE,
         CONFIGURE_MESSAGE_TYPE, CONFIGURE_RESPONSE_MESSAGE_TYPE,
         HOMING_STATE_MESSAGE_TYPE, HOMING_STATE_RESPONSE_MESSAGE_TYPE,
         GET_STEPS_MESSAGE_TYPE, GET_STEPS_RESPONSE_MESSAGE_TYPE,
-        SET_TARGET_STEPS_MESSAGE_TYPE, SET_TARGET_STEPS_RESPONSE_MESSAGE_TYPE};
+        SET_TARGET_STEPS_MESSAGE_TYPE, SET_TARGET_STEPS_RESPONSE_MESSAGE_TYPE,
+        GET_CONFIGURATION_MESSAGE_TYPE, GET_CONFIGURATION_RESPONSE_MESSAGE_TYPE};
 
     class Message {
         private:
@@ -102,8 +106,8 @@ namespace protocol {
                 const char data[3] = {(char)dir_high_is_clockwise, (char)dir_pin, (char)step_pin};
                 return Message(CONFIGURE_MESSAGE_TYPE, data);
             }
-            static Message make_configure_response_message(){
-                const char data[0] = {};
+            static Message make_configure_response_message(bool dir_high_is_clockwise, uint8_t dir_pin, uint8_t step_pin){
+                const char data[3] = {dir_high_is_clockwise, dir_pin, step_pin};
                 return Message(CONFIGURE_RESPONSE_MESSAGE_TYPE, data);
             }
 
@@ -136,7 +140,7 @@ namespace protocol {
                 return Message(GET_STEPS_RESPONSE_MESSAGE_TYPE, data);
             }
 
-            static Message make_set_target_steps_message(int16_t steps) {
+            static Message make_set_target_steps_message(int32_t steps) {
                 const char data[2] = { (char) (steps >> 8) & 0x00FF, (char) steps & 0x00FF };
                 return Message(SET_TARGET_STEPS_MESSAGE_TYPE, data);
             }
@@ -146,7 +150,17 @@ namespace protocol {
                 return Message(SET_TARGET_STEPS_RESPONSE_MESSAGE_TYPE, data);
             }
 
-            static int16_t make_int16_from_two_bytes(char byte_1, char byte_2) {
+            static Message make_get_configuration_message() {
+                const char data[0] = { };
+                return Message(GET_CONFIGURATION_MESSAGE_TYPE, data);
+            }
+
+            static Message make_get_configuration_response_message(bool dir_high_is_clockwise, char direction_pin, char step_pin) {
+                const char data[3] = { dir_high_is_clockwise, direction_pin, step_pin};
+                return Message(GET_CONFIGURATION_RESPONSE_MESSAGE_TYPE, data);
+            }
+
+            static int16_t make_int16_from_two_bytes(uint8_t byte_1, uint8_t byte_2) {
                 const int16_t data  = ((byte_1 << 8) & 0xFF00) + (byte_2 & 0x00FF);
                 return data;
             }

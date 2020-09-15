@@ -69,7 +69,12 @@ void control( void * pvParameters ) {
         controller_data.configuration.dir_high_is_clockwise,
         controller_data.configuration.direction_pin,
         controller_data.configuration.step_pin);
-      auto configuration_finished = [&shared_data] () { shared_data.actions.do_configure = false; };
+      auto configuration_finished = [&shared_data, &rotary_stepper] () { 
+        shared_data.configuration.dir_high_is_clockwise = rotary_stepper.get_dir_high_is_clockwise();
+        shared_data.configuration.direction_pin = rotary_stepper.get_direction_pin();
+        shared_data.configuration.step_pin = rotary_stepper.get_step_pin();
+        shared_data.actions.do_configure = false; 
+        };
       do_safely_sharing_data(configuration_finished);
     }
     int16_t steps = rotary_stepper.get_steps();
@@ -111,7 +116,7 @@ void communication( void * pvParameters ) {
             shared_data.actions.do_configure = true;
           };
           do_safely_sharing_data(copy_configuration);
-          protocol::Message message_return = protocol::Message::make_configure_response_message();
+          protocol::Message message_return = protocol::Message::make_configure_response_message(dir_high_is_clockwise, direction_pin, step_pin);
           write_message(message_return);
         } else if(message.get_message_type() == protocol::HOMING_STATE_MESSAGE_TYPE){                   
           int32_t homing_state = static_cast<int>(HomingState::HOMING_NOT_STARTED);
@@ -132,6 +137,18 @@ void communication( void * pvParameters ) {
           auto update_target_steps = [&shared_data, &target_steps] () { shared_data.control.target_steps = target_steps; };          
           do_safely_sharing_data(update_target_steps);
           protocol::Message message_return = protocol::Message::make_set_target_steps_response_message();
+          write_message(message_return);
+        } else if(message.get_message_type() == protocol::GET_CONFIGURATION_MESSAGE_TYPE) {          
+          char dir_high_is_clockwise = 0;
+          char direction_pin = 0;
+          char step_pin = 0;
+          auto configuration = [&shared_data, &dir_high_is_clockwise, &direction_pin, &step_pin] () { 
+            dir_high_is_clockwise = shared_data.configuration.dir_high_is_clockwise;
+            direction_pin = shared_data.configuration.direction_pin;
+            step_pin = shared_data.configuration.step_pin;
+          };
+          do_safely_sharing_data(configuration);
+          protocol::Message message_return = protocol::Message::make_get_configuration_response_message(dir_high_is_clockwise, direction_pin, step_pin);
           write_message(message_return);
         }
       }

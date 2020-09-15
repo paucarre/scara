@@ -26,7 +26,8 @@ class RotaryHomer {
       uint8_t _right_magnetic_end_stop_pin): center_magnetic_sensor_pin(_center_magnetic_sensor_pin),
                                              left_magnetic_end_stop_pin(_left_magnetic_end_stop_pin),
                                              right_magnetic_end_stop_pin(_right_magnetic_end_stop_pin),
-                                             homing_state(HomingState::HOMING_NOT_STARTED){
+                                             homing_state(HomingState::HOMING_NOT_STARTED),
+                                             rotate_clockwise(true) {
 
     }
 };

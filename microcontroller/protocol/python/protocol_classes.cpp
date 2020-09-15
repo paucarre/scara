@@ -80,6 +80,7 @@ void init_protocol(py::module &m) {
           .def_static("make_int16_from_two_bytes", &protocol::Message::make_int16_from_two_bytes)
           .def_static("make_set_target_steps_message", &protocol::Message::make_set_target_steps_message)
           .def_static("make_set_target_steps_response_message", &protocol::Message::make_set_target_steps_response_message)
+          .def_static("make_get_configuration_message", &protocol::Message::make_get_configuration_message)
           .def_static("make_homing_state_response_message", &protocol::Message::make_homing_state_response_message);
 
      py::class_<protocol::Parser>(m, "Parser")
@@ -106,6 +107,8 @@ void init_protocol(py::module &m) {
      m.attr("GET_STEPS_MESSAGE_TYPE") = py::cast(protocol::GET_STEPS_MESSAGE_TYPE);
      m.attr("GET_STEPS_RESPONSE_MESSAGE_TYPE") = py::cast(protocol::GET_STEPS_RESPONSE_MESSAGE_TYPE);
      m.attr("SET_TARGET_STEPS_MESSAGE_TYPE") = py::cast(protocol::SET_TARGET_STEPS_MESSAGE_TYPE);
-     m.attr("SET_TARGET_STEPS_RESPONSE_MESSAGE_TYPE") = py::cast(protocol::SET_TARGET_STEPS_RESPONSE_MESSAGE_TYPE);
+     m.attr("GET_CONFIGURATION_RESPONSE_MESSAGE_TYPE") = py::cast(protocol::GET_CONFIGURATION_RESPONSE_MESSAGE_TYPE);
+
+
 
 }

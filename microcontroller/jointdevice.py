@@ -22,6 +22,7 @@ class JointDevice():
                 received_byte = self.serial_handler.read()
                 #print(received_byte)
                 parsing_result = self.parser.parse_byte(received_byte)
+                #print(parsing_result.get_state())
                 if parsing_result.is_parsed():
                     message = parsing_result.get_message()
                     if(message.get_message_type() == expected_response_type):
@@ -48,12 +49,22 @@ class JointDevice():
 
     def configure(self):
         configure_message = protocol.Message.make_configure_message(self.dir_high_is_clockwise, self.dir_pin, self.step_pin)
+        #print(configure_message.get_data())
         configure_message_result = self._try_to_send_message(configure_message)
         configure_message_result = configure_message_result.bind(lambda message: \
             self._try_to_get_response(protocol.CONFIGURE_RESPONSE_MESSAGE_TYPE))
         configure_message_result = configure_message_result.map(lambda message: \
             message.get_data()).value_or(None)
         return configure_message_result
+
+    def get_configuration(self):
+        message = protocol.Message.make_get_configuration_message()
+        result = self._try_to_send_message(message)
+        result = result.bind(lambda message: \
+            self._try_to_get_response(protocol.GET_CONFIGURATION_RESPONSE_MESSAGE_TYPE))
+        result = result.map(lambda message: \
+            message.get_data()).value_or(None)
+        return result
 
     def home(self):
         home_message = protocol.Message.make_homing_message()
@@ -78,8 +89,16 @@ class JointDevice():
         result = self._try_to_send_message(message)
         result = result.bind(lambda message: \
             self._try_to_get_response(protocol.SET_TARGET_STEPS_RESPONSE_MESSAGE_TYPE))
+        result = result.map(lambda message: message.get_data()).value_or(None)
+        return result
+
+    def get_steps(self):
+        message = protocol.Message.make_get_steps_message()
+        result = self._try_to_send_message(message)
+        result = result.bind(lambda message: \
+            self._try_to_get_response(protocol.GET_STEPS_RESPONSE_MESSAGE_TYPE))
         result = result.map(lambda message: \
-            protocol.HomingState.from_index(message.get_data())).value_or(None)
+            protocol.Message.make_int16_from_two_bytes(message.get_data()[0], message.get_data()[1])).value_or(None)
         return result
 
     def close(self):
@@ -89,7 +108,7 @@ class JointDevice():
         self.serial_handler = serial.Serial(self.serial_name, self.baud_rate, timeout=1)
 
 
-angular_joint_1_device = JointDevice('/dev/ttyS6', False, 27, 26)
+angular_joint_1_device = JointDevice('/dev/ttyS6', True, 27, 26)
 # angular_joint_2_device = JointDevice('/dev/ttyS6', False, 27, 26)
 # angular_joint_3_device = JointDevice('/dev/ttyS4', False, 27, 26)
 
@@ -97,16 +116,25 @@ joints = [angular_joint_1_device]
 
 for joint in joints:
     joint.open()
-    result = joint.home()
-    time.sleep(1.5)
-    result = protocol.HomingState.HOMING_NOT_STARTED
-    while result != protocol.HomingState.HOMING_FINISHED:
-        result = joint.get_home_state()
-        print('Homing State: ', result)
-    result = joint.set_target_steps(-10000)
+    result = joint.get_configuration()
+    result = joint.configure()
     print(result)
-    time.sleep(10)
-
-
+    while True:
+        result = joint.get_configuration()
+        print(result)
+        time.sleep(1)
+    #print(f'Configuration result: {result}')
+    #result = joint.home()
+    #time.sleep(1.5)
+    #result = protocol.HomingState.HOMING_NOT_STARTED
+    #while result != protocol.HomingState.HOMING_FINISHED:
+    #    result = joint.get_home_state()
+    #    print('Homing State: ', result)
+    #target_steps  = -10000
+    #result = joint.set_target_steps(target_steps)
+    #steps = joint.get_steps()
+    #while steps is None or steps != target_steps:
+    #    steps = joint.get_steps()
+    #    print(f'Current Steps: {steps}')
 
 joint.close()
