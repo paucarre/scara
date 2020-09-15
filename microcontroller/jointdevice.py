@@ -116,25 +116,20 @@ joints = [angular_joint_1_device]
 
 for joint in joints:
     joint.open()
-    result = joint.get_configuration()
     result = joint.configure()
-    print(result)
-    while True:
-        result = joint.get_configuration()
-        print(result)
-        time.sleep(1)
-    #print(f'Configuration result: {result}')
-    #result = joint.home()
-    #time.sleep(1.5)
-    #result = protocol.HomingState.HOMING_NOT_STARTED
-    #while result != protocol.HomingState.HOMING_FINISHED:
-    #    result = joint.get_home_state()
-    #    print('Homing State: ', result)
-    #target_steps  = -10000
-    #result = joint.set_target_steps(target_steps)
-    #steps = joint.get_steps()
-    #while steps is None or steps != target_steps:
-    #    steps = joint.get_steps()
-    #    print(f'Current Steps: {steps}')
+    result = joint.get_configuration()
+    print(f'Configuration result: {result}')
+    result = joint.home()
+    time.sleep(1.5)
+    result = protocol.HomingState.HOMING_NOT_STARTED
+    while result != protocol.HomingState.HOMING_FINISHED:
+        result = joint.get_home_state()
+        print('Homing State: ', result)
+    target_steps  = -10000
+    result = joint.set_target_steps(target_steps)
+    steps = joint.get_steps()
+    while steps is None or steps != target_steps:
+        steps = joint.get_steps()
+        print(f'Current Steps: {steps}')
 
 joint.close()

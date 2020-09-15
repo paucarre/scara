@@ -106,8 +106,9 @@ void init_protocol(py::module &m) {
      m.attr("HOMING_STATE_RESPONSE_MESSAGE_TYPE") = py::cast(protocol::HOMING_STATE_RESPONSE_MESSAGE_TYPE);
      m.attr("GET_STEPS_MESSAGE_TYPE") = py::cast(protocol::GET_STEPS_MESSAGE_TYPE);
      m.attr("GET_STEPS_RESPONSE_MESSAGE_TYPE") = py::cast(protocol::GET_STEPS_RESPONSE_MESSAGE_TYPE);
-     m.attr("SET_TARGET_STEPS_MESSAGE_TYPE") = py::cast(protocol::SET_TARGET_STEPS_MESSAGE_TYPE);
      m.attr("GET_CONFIGURATION_RESPONSE_MESSAGE_TYPE") = py::cast(protocol::GET_CONFIGURATION_RESPONSE_MESSAGE_TYPE);
+     m.attr("SET_TARGET_STEPS_MESSAGE_TYPE") = py::cast(protocol::SET_TARGET_STEPS_MESSAGE_TYPE);
+     m.attr("SET_TARGET_STEPS_RESPONSE_MESSAGE_TYPE") = py::cast(protocol::SET_TARGET_STEPS_MESSAGE_TYPE);
 
 
 
