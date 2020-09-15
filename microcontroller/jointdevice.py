@@ -49,7 +49,6 @@ class JointDevice():
 
     def configure(self):
         configure_message = protocol.Message.make_configure_message(self.dir_high_is_clockwise, self.dir_pin, self.step_pin)
-        #print(configure_message.get_data())
         configure_message_result = self._try_to_send_message(configure_message)
         configure_message_result = configure_message_result.bind(lambda message: \
             self._try_to_get_response(protocol.CONFIGURE_RESPONSE_MESSAGE_TYPE))
@@ -101,35 +100,42 @@ class JointDevice():
             protocol.Message.make_int16_from_two_bytes(message.get_data()[0], message.get_data()[1])).value_or(None)
         return result
 
-    def close(self):
+    def __enter__(self):
+        self.serial_handler = serial.Serial(self.serial_name, self.baud_rate, timeout=1)
+        return self
+
+    def __exit__(self, type, value, traceback):
         self.serial_handler.close()
 
-    def open(self):
-        self.serial_handler = serial.Serial(self.serial_name, self.baud_rate, timeout=1)
+    def home_until_finished(self):
+        result = joint.home()
+        time.sleep(0.5)
+        result = protocol.HomingState.HOMING_NOT_STARTED
+        while result != protocol.HomingState.HOMING_FINISHED:
+            result = joint.get_home_state()
 
+    def configure_until_finished(self):
+        is_finished = lambda result: (result[0] == 1 and self.dir_high_is_clockwise) or (result[0] == 0 and not self.dir_high_is_clockwise) and \
+            (result[1] == self.step_pin) and \
+            (result[2] == self.dir_pin)
+        result = joint.configure()
+        while not is_finished(result):
+            time.sleep(0.1)
+            result = joint.get_configuration()
 
-angular_joint_1_device = JointDevice('/dev/ttyS6', True, 27, 26)
-# angular_joint_2_device = JointDevice('/dev/ttyS6', False, 27, 26)
-# angular_joint_3_device = JointDevice('/dev/ttyS4', False, 27, 26)
-
-joints = [angular_joint_1_device]
-
-for joint in joints:
-    joint.open()
-    result = joint.configure()
-    result = joint.get_configuration()
-    print(f'Configuration result: {result}')
-    result = joint.home()
-    time.sleep(1.5)
-    result = protocol.HomingState.HOMING_NOT_STARTED
-    while result != protocol.HomingState.HOMING_FINISHED:
-        result = joint.get_home_state()
-        print('Homing State: ', result)
-    target_steps  = -10000
-    result = joint.set_target_steps(target_steps)
-    steps = joint.get_steps()
-    while steps is None or steps != target_steps:
+    def move_to_target_until_is_reached(self, target_steps):
+        result = joint.set_target_steps(target_steps)
         steps = joint.get_steps()
-        print(f'Current Steps: {steps}')
+        while steps is None or steps != target_steps:
+            steps = joint.get_steps()
 
-joint.close()
+if __name__ == '__main__':
+    angular_joint_1_device = JointDevice('/dev/ttyS6', True, 27, 26)
+    # angular_joint_2_device = JointDevice('/dev/ttyS6', False, 27, 26)
+    # angular_joint_3_device = JointDevice('/dev/ttyS4', False, 27, 26)
+    joints = [angular_joint_1_device]
+    for joint in joints:
+        with joint as active_joint:
+            active_joint.configure_until_finished()
+            active_joint.home_until_finished()
+            active_joint.move_to_target_until_is_reached(-10000)
