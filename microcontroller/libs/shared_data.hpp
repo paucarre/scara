@@ -13,8 +13,8 @@ struct ActionsData {
 };
 
 struct ControlData {
-  int16_t steps = 0;
-  int16_t target_steps = 0;
+  int32_t steps = 0;
+  int32_t target_steps = 0;
 };
 
 struct SharedData {

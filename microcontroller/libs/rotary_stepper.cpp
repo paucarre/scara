@@ -50,7 +50,7 @@ uint16_t RotaryStepper::get_direction_pin() {
   return direction_pin;
 }
 
-int16_t RotaryStepper::get_steps() {
+int32_t RotaryStepper::get_steps() {
   return steps;
 }
 

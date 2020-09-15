@@ -85,7 +85,9 @@ class JointDevice():
 
     def set_target_steps(self, steps):
         message = protocol.Message.make_set_target_steps_message(steps)
+        #print(message.get_message_bytes())
         result = self._try_to_send_message(message)
+        #print(result)
         result = result.bind(lambda message: \
             self._try_to_get_response(protocol.SET_TARGET_STEPS_RESPONSE_MESSAGE_TYPE))
         result = result.map(lambda message: message.get_data()).value_or(None)
@@ -97,7 +99,7 @@ class JointDevice():
         result = result.bind(lambda message: \
             self._try_to_get_response(protocol.GET_STEPS_RESPONSE_MESSAGE_TYPE))
         result = result.map(lambda message: \
-            protocol.Message.make_int16_from_two_bytes(message.get_data()[0], message.get_data()[1])).value_or(None)
+            protocol.Message.make_int32_from_four_bytes(message.get_data()[0], message.get_data()[1], message.get_data()[2], message.get_data()[3])).value_or(None)
         return result
 
     def __enter__(self):
@@ -124,10 +126,14 @@ class JointDevice():
             result = joint.get_configuration()
 
     def move_to_target_until_is_reached(self, target_steps):
+        #print(f"---- {target_steps} ----")
         result = joint.set_target_steps(target_steps)
+        #print(result)
         steps = joint.get_steps()
+        #print(steps)
         while steps is None or steps != target_steps:
             steps = joint.get_steps()
+            print(steps)
 
 if __name__ == '__main__':
     angular_joint_1_device = JointDevice('/dev/ttyS6', True, 27, 26)
@@ -138,4 +144,4 @@ if __name__ == '__main__':
         with joint as active_joint:
             active_joint.configure_until_finished()
             active_joint.home_until_finished()
-            active_joint.move_to_target_until_is_reached(-10000)
+            active_joint.move_to_target_until_is_reached(-20000)

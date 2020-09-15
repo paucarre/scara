@@ -47,13 +47,13 @@ void write_message(protocol::Message message) {
 
 void control( void * pvParameters ) {
   SharedData controller_data;
-  RotaryStepper rotary_stepper(false, 27, 26);  
+  RotaryStepper rotary_stepper(false, 27, 26);
   rotary_stepper.setup();
   RotaryHomer rotary_homer(CENTER_MAGNETIC_SENSOR_PIN, LEFT_MAGNETIC_SENSOR_PIN, RIGH_MAGNETIC_SENSOR_PIN);
   rotary_homer.setup(rotary_stepper);
   uint8_t loops_without_notification = 0;
   for (;;) {
-    delayMicroseconds(100);  
+    delayMicroseconds(100);
     TIMERG0.wdt_wprotect=TIMG_WDT_WKEY_VALUE;
     TIMERG0.wdt_feed=1;
     TIMERG0.wdt_wprotect=0;
@@ -69,11 +69,11 @@ void control( void * pvParameters ) {
         controller_data.configuration.dir_high_is_clockwise,
         controller_data.configuration.direction_pin,
         controller_data.configuration.step_pin);
-      auto configuration_finished = [&shared_data, &rotary_stepper] () { 
+      auto configuration_finished = [&shared_data, &rotary_stepper] () {
         shared_data.configuration.dir_high_is_clockwise = rotary_stepper.get_dir_high_is_clockwise();
         shared_data.configuration.direction_pin = rotary_stepper.get_direction_pin();
         shared_data.configuration.step_pin = rotary_stepper.get_step_pin();
-        shared_data.actions.do_configure = false; 
+        shared_data.actions.do_configure = false;
         };
       do_safely_sharing_data(configuration_finished);
     }
@@ -118,31 +118,29 @@ void communication( void * pvParameters ) {
           do_safely_sharing_data(copy_configuration);
           protocol::Message message_return = protocol::Message::make_configure_response_message(dir_high_is_clockwise, direction_pin, step_pin);
           write_message(message_return);
-        } else if(message.get_message_type() == protocol::HOMING_STATE_MESSAGE_TYPE){                   
+        } else if(message.get_message_type() == protocol::HOMING_STATE_MESSAGE_TYPE){
           int32_t homing_state = static_cast<int>(HomingState::HOMING_NOT_STARTED);
           auto get_homing_state = [&homing_state, &shared_data] () { homing_state = static_cast<int>(shared_data.homing_state); };
           do_safely_sharing_data(get_homing_state);
           protocol::Message message_return = protocol::Message::make_homing_state_response_message((char)(0x000F & homing_state));
           write_message(message_return);
         } else if(message.get_message_type() == protocol::GET_STEPS_MESSAGE_TYPE) {
-          int16_t steps = 0;
+          int32_t steps = 0;
           auto update_steps = [&shared_data, &steps] () { steps = shared_data.control.steps; };
           do_safely_sharing_data(update_steps);
           protocol::Message message_return = protocol::Message::make_get_steps_response_message(steps);
           write_message(message_return);
         } else if(message.get_message_type() == protocol::SET_TARGET_STEPS_MESSAGE_TYPE) {
-          char byte1 = message.data[0];
-          char byte2 = message.data[1];
-          int16_t target_steps = protocol::Message::make_int16_from_two_bytes(byte1, byte2);          
-          auto update_target_steps = [&shared_data, &target_steps] () { shared_data.control.target_steps = target_steps; };          
+          int32_t target_steps = protocol::Message::make_int32_from_four_bytes(message.data[0], message.data[1], message.data[2], message.data[3]);
+          auto update_target_steps = [&shared_data, &target_steps] () { shared_data.control.target_steps = target_steps; };
           do_safely_sharing_data(update_target_steps);
           protocol::Message message_return = protocol::Message::make_set_target_steps_response_message();
           write_message(message_return);
-        } else if(message.get_message_type() == protocol::GET_CONFIGURATION_MESSAGE_TYPE) {          
+        } else if(message.get_message_type() == protocol::GET_CONFIGURATION_MESSAGE_TYPE) {
           char dir_high_is_clockwise = 0;
           char direction_pin = 0;
           char step_pin = 0;
-          auto configuration = [&shared_data, &dir_high_is_clockwise, &direction_pin, &step_pin] () { 
+          auto configuration = [&shared_data, &dir_high_is_clockwise, &direction_pin, &step_pin] () {
             dir_high_is_clockwise = shared_data.configuration.dir_high_is_clockwise;
             direction_pin = shared_data.configuration.direction_pin;
             step_pin = shared_data.configuration.step_pin;

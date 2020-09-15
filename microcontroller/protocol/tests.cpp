@@ -110,7 +110,7 @@ void configure_message_test() {
 
 void home_creation_message_test() {
     Message message = Message::make_homing_message();
-    char expected_message[7] = { (char)0xAA, (char)0x01, (char)(0x00 ^ 0x01), (char)0xFF};
+    char expected_message[7] = { (char)0xAA, (char)0x01, (char)(0x01), (char)0xFF};
     assert(message.message[0] == expected_message[0]);
     assert(message.message[1] == expected_message[1]);
     assert(message.message[2] == expected_message[2]);
@@ -147,7 +147,7 @@ void return_homing_state_creation_message_test() {
 
 void return_homing_state_creation_message_with_flags_in_data_test() {
     Message message = Message::make_homing_state_response_message(0xAA);
-    char expected_message[6] = { (char)0xAA, (char)0x06, (char)0xBB, (char)0xAA, (char) 0x17, (char) 0xFF };
+    char expected_message[6] = { (char)0xAA, (char)0x06, (char)0xBB, (char)0xAA, (char) (0x06 ^ 0xAA), (char) 0xFF };
     assert(message.message[0] == expected_message[0]);
     assert(message.message[1] == expected_message[1]);
     assert(message.message[2] == expected_message[2]);
@@ -235,25 +235,69 @@ void homing_state_creation_message_parsing() {
 }
 
 
-void get_steps_response_creation_message_parsing(int16_t steps) {
+void get_steps_response_creation_message_parsing(int32_t steps) {
+    //std::cout  << steps << std::endl;
     Parser parser;
     ParsingResult parse_result;
-    Message get_steps_return_message = Message::make_get_steps_response_message(steps);
-    //print_message(homing_message);
-    for(uint32_t idx = 0; idx < get_steps_return_message.get_message_length(); idx++){
-        parse_result = parser.parse_byte(get_steps_return_message.message[idx]);
+    Message message = Message::make_get_steps_response_message(steps);
+    //print_message(message);
+    for(uint32_t idx = 0; idx < message.get_message_length(); idx++){
+        parse_result = parser.parse_byte(message.message[idx]);
+        //std::cout  << (int) message.message[idx] << ": " << static_cast<int>(parse_result.get_state()) << std::endl;
+    }
+    assert(parse_result.get_is_parsed());
+    assert(parse_result.get_message().get_message_type() == message.get_message_type());
+
+    for(uint32_t idx = 0; idx < message.get_message_length(); idx++){
+        assert(message.message[idx] == parse_result.get_message().message[idx]);
+    }
+
+    int32_t steps_in_message = Message::make_int32_from_four_bytes(
+        message.get_data()[0],
+        message.get_data()[1],
+        message.get_data()[2],
+        message.get_data()[3]);
+    assert(steps_in_message == steps);
+
+    int32_t steps_in_parsed_message = Message::make_int32_from_four_bytes(
+        parse_result.get_message().get_data()[0],
+        parse_result.get_message().get_data()[1],
+        parse_result.get_message().get_data()[2],
+        parse_result.get_message().get_data()[3]);
+    assert(steps_in_parsed_message == steps);
+
+    std::cout << "SUCCESS -- GET SETEPS RESPONSE MESSAGE TEST FOR STEPS: " << steps << std::endl;
+}
+
+
+void set_steps_message_parsing(int32_t steps) {
+    Parser parser;
+    ParsingResult parse_result;
+    Message message = Message::make_set_target_steps_message(steps);
+
+    for(uint32_t idx = 0; idx < message.get_message_length(); idx++){
+        parse_result = parser.parse_byte(message.message[idx]);
         //std::cout  << (int) homing_message.message[idx] << ": " << static_cast<int>(parse_result.get_state()) << std::endl;
     }
     assert(parse_result.get_is_parsed());
-    assert(parse_result.get_message().get_message_type() == get_steps_return_message.get_message_type());
+    assert(parse_result.get_message().get_message_type() == message.get_message_type());
 
-    for(uint32_t idx = 0; idx < get_steps_return_message.get_message_length(); idx++){
-        assert(get_steps_return_message.message[idx] == parse_result.get_message().message[idx]);
+    for(uint32_t idx = 0; idx < message.get_message_length(); idx++){
+        assert(message.message[idx] == parse_result.get_message().message[idx]);
     }
 
-    int16_t steps_in_message = Message::make_int16_from_two_bytes(get_steps_return_message.get_data()[0], get_steps_return_message.get_data()[1]);
+    int32_t steps_in_message = Message::make_int32_from_four_bytes(
+        message.get_data()[0],
+        message.get_data()[1],
+        message.get_data()[2],
+        message.get_data()[3]);
     assert(steps_in_message == steps);
-    int16_t steps_in_parsed_message = Message::make_int16_from_two_bytes(parse_result.get_message().get_data()[0], parse_result.get_message().get_data()[1]);
+
+    int32_t steps_in_parsed_message = Message::make_int32_from_four_bytes(
+        parse_result.get_message().get_data()[0],
+        parse_result.get_message().get_data()[1],
+        parse_result.get_message().get_data()[2],
+        parse_result.get_message().get_data()[3]);
     assert(steps_in_parsed_message == steps);
 
     std::cout << "SUCCESS -- GET SETEPS RESPONSE MESSAGE TEST FOR STEPS: " << steps << std::endl;
@@ -269,9 +313,22 @@ int main(int argc, char **argv) {
     homing_state_creation_message_parsing();
     return_homing_state_creation_message_with_flags_in_data_test();
     return_homing_state_creation_message_parsing();
+
+    get_steps_response_creation_message_parsing(-100000);
+    get_steps_response_creation_message_parsing(100000);
+    get_steps_response_creation_message_parsing(-10000);
     get_steps_response_creation_message_parsing(-30000);
     get_steps_response_creation_message_parsing(30000);
     get_steps_response_creation_message_parsing(-30);
     get_steps_response_creation_message_parsing(30);
+
+    set_steps_message_parsing(-100000);
+    set_steps_message_parsing(100000);
+    set_steps_message_parsing(-10000);
+    set_steps_message_parsing(-30000);
+    set_steps_message_parsing(30000);
+    set_steps_message_parsing(-30);
+    set_steps_message_parsing(30);
+
     return 0;
 }

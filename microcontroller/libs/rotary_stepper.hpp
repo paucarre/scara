@@ -8,7 +8,7 @@ class RotaryStepper {
     bool direction_pin_state_is_clockwise;
     uint16_t direction_pin;
     uint16_t step_pin;
-    int16_t steps;
+    int32_t steps;
     bool dir_high_is_clockwise;
   public:
 
@@ -29,7 +29,7 @@ class RotaryStepper {
 
     uint16_t get_direction_pin();
 
-    int16_t get_steps();
+    int32_t get_steps();
 
     bool get_dir_high_is_clockwise();
 };

@@ -61,8 +61,8 @@ namespace protocol {
     static MessageType HOMING_STATE_MESSAGE_TYPE = MessageType(0x05, 0);
     static MessageType HOMING_STATE_RESPONSE_MESSAGE_TYPE = MessageType(0x06, 1);
     static MessageType GET_STEPS_MESSAGE_TYPE = MessageType(0x07, 0);
-    static MessageType GET_STEPS_RESPONSE_MESSAGE_TYPE = MessageType(0x08, 2);
-    static MessageType SET_TARGET_STEPS_MESSAGE_TYPE = MessageType(0x09, 2);
+    static MessageType GET_STEPS_RESPONSE_MESSAGE_TYPE = MessageType(0x08, 4);
+    static MessageType SET_TARGET_STEPS_MESSAGE_TYPE = MessageType(0x09, 4);
     static MessageType SET_TARGET_STEPS_RESPONSE_MESSAGE_TYPE = MessageType(0x0A, 0);
     static MessageType GET_CONFIGURATION_MESSAGE_TYPE = MessageType(0x0B, 0);
     static MessageType GET_CONFIGURATION_RESPONSE_MESSAGE_TYPE = MessageType(0x0C, 3);
@@ -135,13 +135,13 @@ namespace protocol {
                 return Message(GET_STEPS_MESSAGE_TYPE, data);
             }
 
-            static Message make_get_steps_response_message(int16_t steps) {
-                const char data[2] = { (char) (steps >> 8) & 0x00FF, (char) steps & 0x00FF };
+            static Message make_get_steps_response_message(int32_t steps) {
+                const char data[4] = { (char) ((steps & 0xFF000000) >> 24), (char)((steps & 0x00FF0000) >> 16), (char)((steps & 0x0000FF00) >> 8), (char)(steps & 0x000000FF) };
                 return Message(GET_STEPS_RESPONSE_MESSAGE_TYPE, data);
             }
 
             static Message make_set_target_steps_message(int32_t steps) {
-                const char data[2] = { (char) (steps >> 8) & 0x00FF, (char) steps & 0x00FF };
+                const char data[4] = { (char) ((steps & 0xFF000000) >> 24), (char)((steps & 0x00FF0000) >> 16), (char)((steps & 0x0000FF00) >> 8), (char)(steps & 0x000000FF) };
                 return Message(SET_TARGET_STEPS_MESSAGE_TYPE, data);
             }
 
@@ -160,8 +160,8 @@ namespace protocol {
                 return Message(GET_CONFIGURATION_RESPONSE_MESSAGE_TYPE, data);
             }
 
-            static int16_t make_int16_from_two_bytes(uint8_t byte_1, uint8_t byte_2) {
-                const int16_t data  = ((byte_1 << 8) & 0xFF00) + (byte_2 & 0x00FF);
+            static int32_t make_int32_from_four_bytes(uint8_t byte_1, uint8_t byte_2, uint8_t byte_3, uint8_t byte_4) {
+                const int32_t data  = ((byte_1 << 24) & 0xFF000000) + ((byte_2 << 16) & 0x00FF0000) + ((byte_3 << 8) & 0x0000FF00) + (byte_4 & 0x000000FF);
                 return data;
             }
 

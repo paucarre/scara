@@ -1,15 +1,6 @@
 #include "protocol.hpp"
-
+//#include <iostream>
 namespace protocol {
-
-    char MessageFactory::make_checksum(MessageType message_type, char* data, uint8_t begin, uint8_t end) {
-        uint8_t checksum = message_type.get_label();
-        for(uint8_t i = begin; i < end; i++){
-            checksum = checksum ^ data[i];
-        }
-        return checksum;
-    }
-
 
     uint8_t MessageFactory::write_message_data(MessageType message_type, const char* data, char* message_out) {
         uint8_t escaped_bytes = 0;
@@ -17,6 +8,7 @@ namespace protocol {
         message_out[1] = message_type.get_label();
         uint8_t message_index = 2;
         uint8_t data_index = 0;
+        char checksum = message_type.get_label();
         for(; data_index < message_type.get_data_length();){
             if(Parser::is_flag(data[data_index])) {
                 message_out[message_index] = Parser::ESCAPE_FLAG;
@@ -24,10 +16,10 @@ namespace protocol {
                 message_index ++;
             }
             message_out[message_index] = data[data_index];
+            checksum = checksum ^ data[data_index];
             message_index++;
             data_index++;
         }
-        char checksum = make_checksum(message_type, message_out,  2, message_type.get_data_length() + 3);
         if(Parser::is_flag(checksum)) {
             message_out[message_index] = Parser::ESCAPE_FLAG;
             escaped_bytes ++;
@@ -93,12 +85,12 @@ namespace protocol {
                 {
                     //std::cout << (int) data << std::endl;
                     if(data_index == message_type.get_data_length()){
-                         //std::cout << "validating checksum  " << std::endl;
+                        //std::cout << "validating checksum  " << std::endl;
                         parsing_error = validate_checksum(checksum, data);
                     } else {
-                         checksum = checksum ^ data;
                         if(previous_data_was_escaped){
                             parsed_data[data_index++] = data;
+                            checksum = checksum ^ data;
                             //std::cout << "parsed data " << (int)data << std::endl;
                             previous_data_was_escaped = false;
                         } else {
@@ -107,6 +99,7 @@ namespace protocol {
                                 previous_data_was_escaped = true;
                             } else {
                                 parsed_data[data_index++] = data;
+                                checksum = checksum ^ data;
                                 //std::cout << "parsed data not escape " << (int)data << std::endl;
                                 previous_data_was_escaped = false;
                             }
