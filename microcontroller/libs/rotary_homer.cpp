@@ -65,7 +65,7 @@ void RotaryHomer::loop(RotaryStepper &rotary_stepper){
         rotate_clockwise = ! rotate_clockwise;
         rotary_stepper.apply_direction(rotate_clockwise);
         homing_state = HomingState::REVERSE_DIRECTION_HALF_THE_STEPS;
-        half_steps_backward_left = steps_with_center_on / 2;
+        half_steps_backward_left = (steps_with_center_on / 2) + homing_offset;
       }
     }
     //Serial.println("rotary_homer - stepping");

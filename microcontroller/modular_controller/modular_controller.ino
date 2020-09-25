@@ -49,7 +49,7 @@ void control( void * pvParameters ) {
   SharedData controller_data;
   RotaryStepper rotary_stepper(false, 27, 26);
   rotary_stepper.setup();
-  RotaryHomer rotary_homer(CENTER_MAGNETIC_SENSOR_PIN, LEFT_MAGNETIC_SENSOR_PIN, RIGH_MAGNETIC_SENSOR_PIN);
+  RotaryHomer rotary_homer(CENTER_MAGNETIC_SENSOR_PIN, LEFT_MAGNETIC_SENSOR_PIN, RIGH_MAGNETIC_SENSOR_PIN, 0);
   rotary_homer.setup(rotary_stepper);
   uint8_t loops_without_notification = 0;
   for (;;) {
@@ -69,6 +69,7 @@ void control( void * pvParameters ) {
         controller_data.configuration.dir_high_is_clockwise,
         controller_data.configuration.direction_pin,
         controller_data.configuration.step_pin);
+      rotary_homer.set_homing_offset(controller_data.configuration.homing_offset);
       auto configuration_finished = [&shared_data, &rotary_stepper] () {
         shared_data.configuration.dir_high_is_clockwise = rotary_stepper.get_dir_high_is_clockwise();
         shared_data.configuration.direction_pin = rotary_stepper.get_direction_pin();
@@ -109,14 +110,16 @@ void communication( void * pvParameters ) {
           bool dir_high_is_clockwise = message.data[0];
           uint8_t direction_pin = message.data[1];
           uint8_t step_pin = message.data[2];
-          auto copy_configuration = [&, dir_high_is_clockwise, direction_pin, step_pin] () {
+          int16_t homing_offset = protocol::Message::make_int16_from_two_bytes(message.data[3], message.data[4]);
+          auto copy_configuration = [&, dir_high_is_clockwise, direction_pin, step_pin, homing_offset] () {
             shared_data.configuration.dir_high_is_clockwise = dir_high_is_clockwise;
             shared_data.configuration.direction_pin = direction_pin;
             shared_data.configuration.step_pin = step_pin;
+            shared_data.configuration.homing_offset = homing_offset;
             shared_data.actions.do_configure = true;
           };
           do_safely_sharing_data(copy_configuration);
-          protocol::Message message_return = protocol::Message::make_configure_response_message(dir_high_is_clockwise, direction_pin, step_pin);
+          protocol::Message message_return = protocol::Message::make_configure_response_message(dir_high_is_clockwise, direction_pin, step_pin, homing_offset);
           write_message(message_return);
         } else if(message.get_message_type() == protocol::HOMING_STATE_MESSAGE_TYPE){
           int32_t homing_state = static_cast<int>(HomingState::HOMING_NOT_STARTED);
@@ -140,13 +143,15 @@ void communication( void * pvParameters ) {
           char dir_high_is_clockwise = 0;
           char direction_pin = 0;
           char step_pin = 0;
-          auto configuration = [&shared_data, &dir_high_is_clockwise, &direction_pin, &step_pin] () {
+          int16_t homing_offset = 0;
+          auto configuration = [&shared_data, &dir_high_is_clockwise, &direction_pin, &step_pin, &homing_offset] () {
             dir_high_is_clockwise = shared_data.configuration.dir_high_is_clockwise;
             direction_pin = shared_data.configuration.direction_pin;
             step_pin = shared_data.configuration.step_pin;
+            homing_offset = shared_data.configuration.homing_offset;
           };
           do_safely_sharing_data(configuration);
-          protocol::Message message_return = protocol::Message::make_get_configuration_response_message(dir_high_is_clockwise, direction_pin, step_pin);
+          protocol::Message message_return = protocol::Message::make_get_configuration_response_message(dir_high_is_clockwise, direction_pin, step_pin, homing_offset);
           write_message(message_return);
         }
       }

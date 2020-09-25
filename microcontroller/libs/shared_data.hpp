@@ -5,6 +5,7 @@ struct ConfigurationData {
   bool dir_high_is_clockwise = false;
   uint8_t direction_pin = 27;
   uint8_t step_pin = 26;
+  int16_t homing_offset = 0;
 };
 
 struct ActionsData {

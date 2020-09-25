@@ -5,13 +5,14 @@ from returns.result import Failure, ResultE, Success
 
 class JointDevice():
 
-    def __init__(self, serial_name, dir_high_is_clockwise, dir_pin, step_pin, baud_rate=9600):
+    def __init__(self, serial_name, dir_high_is_clockwise, dir_pin, step_pin, homing_offset, baud_rate=9600):
         self.parser = protocol.Parser()
         self.serial_name = serial_name
         self.baud_rate = baud_rate
         self.dir_high_is_clockwise = dir_high_is_clockwise
         self.step_pin = step_pin
         self.dir_pin = dir_pin
+        self.homing_offset = homing_offset
 
 
 
@@ -48,7 +49,7 @@ class JointDevice():
             return Failure(error)
 
     def configure(self):
-        configure_message = protocol.Message.make_configure_message(self.dir_high_is_clockwise, self.dir_pin, self.step_pin)
+        configure_message = protocol.Message.make_configure_message(self.dir_high_is_clockwise, self.dir_pin, self.step_pin, self.homing_offset)
         configure_message_result = self._try_to_send_message(configure_message)
         configure_message_result = configure_message_result.bind(lambda message: \
             self._try_to_get_response(protocol.CONFIGURE_RESPONSE_MESSAGE_TYPE))
@@ -136,7 +137,7 @@ class JointDevice():
             print(steps)
 
 if __name__ == '__main__':
-    angular_joint_1_device = JointDevice('/dev/ttyS6', True, 27, 26)
+    angular_joint_1_device = JointDevice('/dev/ttyS6', True, 27, 26, 0)
     # angular_joint_2_device = JointDevice('/dev/ttyS6', False, 27, 26)
     # angular_joint_3_device = JointDevice('/dev/ttyS4', False, 27, 26)
     joints = [angular_joint_1_device]
@@ -144,4 +145,4 @@ if __name__ == '__main__':
         with joint as active_joint:
             active_joint.configure_until_finished()
             active_joint.home_until_finished()
-            active_joint.move_to_target_until_is_reached(-20000)
+            #active_joint.move_to_target_until_is_reached(-20000)

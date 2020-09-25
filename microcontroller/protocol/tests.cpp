@@ -95,8 +95,8 @@ void home_response_message_test() {
 }
 
 void configure_message_test() {
-    Message message = Message::make_configure_message(true, 6, 7);
-    char expected_message[7] = { (char)0xAA, (char)0x03, (char)0x01, (char)0x06, (char)0x07, (char)(0x00 ^ 0x03 ^ 0x01 ^ 0x06 ^ 0x07), (char)0xFF};
+    Message message = Message::make_configure_message(true, 6, 7, -1000);
+    char expected_message[9] = { (char)0xAA, (char)0x03, (char)0x01, (char)0x06, (char)0x07, (char)0xFC, (char)0x18, (char)0xE7, (char)0xFF };
     assert(message.message[0] == expected_message[0]);
     assert(message.message[1] == expected_message[1]);
     assert(message.message[2] == expected_message[2]);
@@ -104,6 +104,17 @@ void configure_message_test() {
     assert(message.message[4] == expected_message[4]);
     assert(message.message[5] == expected_message[5]);
     assert(message.message[6] == expected_message[6]);
+    assert(message.message[7] == expected_message[7]);
+    assert(message.message[8] == expected_message[8]);
+    assert(Message::make_int16_from_two_bytes(message.message[5], message.message[6]) == -1000);
+
+    assert(message.data[0] == expected_message[2]);
+    assert(message.data[1] == expected_message[3]);
+    assert(message.data[2] == expected_message[4]);
+    assert(message.data[3] == expected_message[5]);
+    assert(message.data[4] == expected_message[6]);
+
+
     std::cout << "SUCCESS -- CONFIGURE MESSAGE CREATION" << std::endl;
 }
 
