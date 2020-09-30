@@ -11,11 +11,11 @@ bool RotaryHomer::center_is_on() {
 }
 
 bool RotaryHomer::left_is_on() {
-  return digitalRead(left_magnetic_end_stop_pin);
+  return false && digitalRead(left_magnetic_end_stop_pin); //TODO: change this!!
 }
 
 bool RotaryHomer::right_is_on() {
-  return digitalRead(right_magnetic_end_stop_pin);
+  return false && digitalRead(right_magnetic_end_stop_pin); //TODO: change this!!
 }
 
 void RotaryHomer::check_end_stops(RotaryStepper &rotary_stepper){

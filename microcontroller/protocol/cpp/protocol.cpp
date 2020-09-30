@@ -84,7 +84,7 @@ namespace protocol {
             case ParsingState::PARSING_MESSAGE:
                 {
                     //std::cout << (int) data << std::endl;
-                    if(data_index == message_type.get_data_length()){
+                    if(data_index == message_type.get_data_length() && data != ESCAPE_FLAG){
                         //std::cout << "validating checksum  " << std::endl;
                         parsing_error = validate_checksum(checksum, data);
                     } else {

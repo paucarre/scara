@@ -118,6 +118,92 @@ void configure_message_test() {
     std::cout << "SUCCESS -- CONFIGURE MESSAGE CREATION" << std::endl;
 }
 
+//angular_joint_1_device = JointDevice('/dev/ttyS6', True, 27, 26, -175)
+
+void configure_message_response_test() {
+    Message message = Message::make_configure_response_message(true, 27, 26, -175);
+    char expected_message[11] = { (char)0xAA, (char)0x04, (char)0x01, (char)0x1b, (char)0x1a, (char)0xbb, (char)0xff, (char)0x51, (char)0xbb, (char)0xaa, (char)0xFF };
+    assert(message.message[0] == expected_message[0]);
+    assert(message.message[1] == expected_message[1]);
+    assert(message.message[2] == expected_message[2]);
+    assert(message.message[3] == expected_message[3]);
+    assert(message.message[4] == expected_message[4]);
+    assert(message.message[5] == expected_message[5]);
+    assert(message.message[6] == expected_message[6]);
+    assert(message.message[7] == expected_message[7]);
+    assert(message.message[8] == expected_message[8]);
+    assert(message.message[9] == expected_message[9]);
+    assert(message.message[10] == expected_message[10]);
+    assert(Message::make_int16_from_two_bytes(message.message[6], message.message[7]) == -175);
+
+    assert(message.data[0] == expected_message[2]);
+    assert(message.data[1] == expected_message[3]);
+    assert(message.data[2] == expected_message[4]);
+    assert(message.data[3] == expected_message[6]);
+    assert(message.data[4] == expected_message[7]);
+
+    ParsingResult parse_result;
+    Parser parser;
+    for(uint32_t idx = 0; idx < message.get_message_length(); idx++){
+        parse_result = parser.parse_byte(message.message[idx]);
+    }
+    assert(parse_result.get_is_parsed());
+    assert(parse_result.get_message().get_message_type() == message.get_message_type());
+    for(uint32_t idx = 0; idx < message.get_message_length(); idx++){
+        assert(message.message[idx] == parse_result.get_message().message[idx]);
+    }
+
+    char expected_data[5] = {(char)0x01, (char)0x1b, (char)0x1a, (char)0xff, (char)0x51};
+    for(uint32_t idx = 0; idx < message.get_message_type().get_data_length(); idx++){
+        assert(message.data[idx] == parse_result.get_message().data[idx]);
+        assert(expected_data[idx] == parse_result.get_message().data[idx]);
+    }
+
+
+    std::cout << "SUCCESS -- CONFIGURE MESSAGE RESPONSE CREATION" << std::endl;
+}
+
+void configure_message_test_2() {
+    Message message = Message::make_configure_message(true, 27, 26, -175);
+    char expected_message[10] = { (char)0xAA, (char)0x03, (char)0x01, (char)0x1b, (char)0x1a, (char)0xbb, (char)0xff, (char)0x51, (char)0xad, (char)0xFF };
+    assert(message.message[0] == expected_message[0]);
+    assert(message.message[1] == expected_message[1]);
+    assert(message.message[2] == expected_message[2]);
+    assert(message.message[3] == expected_message[3]);
+    assert(message.message[4] == expected_message[4]);
+    assert(message.message[5] == expected_message[5]);
+    assert(message.message[6] == expected_message[6]);
+    assert(message.message[7] == expected_message[7]);
+    assert(message.message[8] == expected_message[8]);
+    assert(message.message[9] == expected_message[9]);
+    assert(Message::make_int16_from_two_bytes(message.message[6], message.message[7]) == -175);
+
+    assert(message.data[0] == expected_message[2]);
+    assert(message.data[1] == expected_message[3]);
+    assert(message.data[2] == expected_message[4]);
+    assert(message.data[3] == expected_message[6]);
+    assert(message.data[4] == expected_message[7]);
+
+    ParsingResult parse_result;
+    Parser parser;
+    for(uint32_t idx = 0; idx < message.get_message_length(); idx++){
+        parse_result = parser.parse_byte(message.message[idx]);
+    }
+    assert(parse_result.get_is_parsed());
+    assert(parse_result.get_message().get_message_type() == message.get_message_type());
+    for(uint32_t idx = 0; idx < message.get_message_length(); idx++){
+        assert(message.message[idx] == parse_result.get_message().message[idx]);
+    }
+
+    char expected_data[5] = {(char)0x01, (char)0x1b, (char)0x1a, (char)0xff, (char)0x51};
+    for(uint32_t idx = 0; idx < message.get_message_type().get_data_length(); idx++){
+        assert(message.data[idx] == parse_result.get_message().data[idx]);
+        assert(expected_data[idx] == parse_result.get_message().data[idx]);
+    }
+
+
+    std::cout << "SUCCESS -- CONFIGURE MESSAGE CREATION" << std::endl;
+}
 
 void home_creation_message_test() {
     Message message = Message::make_homing_message();
@@ -340,6 +426,9 @@ int main(int argc, char **argv) {
     set_steps_message_parsing(30000);
     set_steps_message_parsing(-30);
     set_steps_message_parsing(30);
+
+    configure_message_test_2();
+    configure_message_response_test();
 
     return 0;
 }

@@ -108,7 +108,7 @@ namespace protocol {
                 return Message(CONFIGURE_MESSAGE_TYPE, data);
             }
             static Message make_configure_response_message(bool dir_high_is_clockwise, uint8_t dir_pin, uint8_t step_pin, int16_t homing_offset){
-                const char data[5] = {dir_high_is_clockwise, dir_pin, step_pin, (char)((homing_offset & 0xFF00) >> 8), (char)(homing_offset & 0x00FF)};
+                const char data[5] = {(char)dir_high_is_clockwise, (char)dir_pin, (char)step_pin, (char)((homing_offset & 0xFF00) >> 8), (char)(homing_offset & 0x00FF)};
                 return Message(CONFIGURE_RESPONSE_MESSAGE_TYPE, data);
             }
 

@@ -136,8 +136,9 @@ class JointDevice():
             steps = joint.get_steps()
             print(steps)
 
+# -175
 if __name__ == '__main__':
-    angular_joint_1_device = JointDevice('/dev/ttyS6', True, 27, 26, 0)
+    angular_joint_1_device = JointDevice('/dev/ttyS6', True, 27, 26, -175)
     # angular_joint_2_device = JointDevice('/dev/ttyS6', False, 27, 26)
     # angular_joint_3_device = JointDevice('/dev/ttyS4', False, 27, 26)
     joints = [angular_joint_1_device]
