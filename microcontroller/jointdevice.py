@@ -21,9 +21,9 @@ class JointDevice():
         while current_attempt < MAX_ATTEMTS:
             if self.serial_handler.in_waiting > 0:
                 received_byte = self.serial_handler.read()
-                #print(received_byte)
+                # print(received_byte)
                 parsing_result = self.parser.parse_byte(received_byte)
-                #print(parsing_result.get_state())
+                # print(parsing_result.get_state())
                 if parsing_result.is_parsed():
                     message = parsing_result.get_message()
                     if(message.get_message_type() == expected_response_type):
@@ -60,6 +60,7 @@ class JointDevice():
     def get_configuration(self):
         message = protocol.Message.make_get_configuration_message()
         result = self._try_to_send_message(message)
+        #print(result)
         result = result.bind(lambda message: \
             self._try_to_get_response(protocol.GET_CONFIGURATION_RESPONSE_MESSAGE_TYPE))
         result = result.map(lambda message: \
@@ -118,10 +119,12 @@ class JointDevice():
             result = joint.get_home_state()
 
     def configure_until_finished(self):
-        is_finished = lambda result: (result[0] == 1 and self.dir_high_is_clockwise) or (result[0] == 0 and not self.dir_high_is_clockwise) and \
-            (result[1] == self.step_pin) and \
-            (result[2] == self.dir_pin)
+        is_finished = lambda result: ( (result[0] == 1 and self.dir_high_is_clockwise) or (result[0] == 0 and not self.dir_high_is_clockwise) ) and \
+            (result[1] == self.dir_pin) and \
+            (result[2] == self.step_pin) and \
+            (protocol.Message.make_int16_from_two_bytes(result[3], result[4]) == self.homing_offset)
         result = joint.configure()
+        result = joint.get_configuration()
         while not is_finished(result):
             time.sleep(0.1)
             result = joint.get_configuration()
@@ -136,14 +139,14 @@ class JointDevice():
             steps = joint.get_steps()
             print(steps)
 
-# -175
 if __name__ == '__main__':
-    angular_joint_1_device = JointDevice('/dev/ttyS6', True, 27, 26, -175)
-    # angular_joint_2_device = JointDevice('/dev/ttyS6', False, 27, 26)
-    # angular_joint_3_device = JointDevice('/dev/ttyS4', False, 27, 26)
-    joints = [angular_joint_1_device]
+    angular_joint_1_device = JointDevice('/dev/ttyS6', True, 27, 26, -425)
+    angular_joint_2_device = JointDevice('/dev/ttyS11', True, 27, 26, -425)
+    angular_joint_3_device = JointDevice('/dev/ttyS10', True, 27, 26, -425)
+    joints = [angular_joint_1_device, angular_joint_2_device, angular_joint_3_device]
     for joint in joints:
         with joint as active_joint:
             active_joint.configure_until_finished()
             active_joint.home_until_finished()
-            #active_joint.move_to_target_until_is_reached(-20000)
+            active_joint.move_to_target_until_is_reached(-10000)
+            active_joint.move_to_target_until_is_reached(0)
