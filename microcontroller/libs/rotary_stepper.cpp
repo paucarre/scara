@@ -3,6 +3,7 @@
 void RotaryStepper::setup() {
   pinMode(this->direction_pin, OUTPUT);
   pinMode(this->step_pin, OUTPUT);
+  pinMode(this->enabled_pin, OUTPUT);
   digitalWrite(this->step_pin, HIGH);
   this->apply_direction(true);
 }
@@ -35,15 +36,24 @@ void RotaryStepper::step() {
   }
 }
 
-void RotaryStepper::configure(bool dir_high_is_clockwise_, uint16_t direction_pin_, uint16_t step_pin_) {
+void RotaryStepper::enable(bool is_enabled) {
+  digitalWrite(this->enabled_pin, !is_enabled);
+}
+
+void RotaryStepper::configure(bool dir_high_is_clockwise_, uint16_t direction_pin_, uint16_t step_pin_, ActuatorType actuator_type_) {
   this->dir_high_is_clockwise = dir_high_is_clockwise_;
   this->direction_pin = direction_pin_;
   this->step_pin = step_pin_;
+  this->actuator_type = actuator_type_;
   apply_direction(true);
 }
 
 uint16_t RotaryStepper::get_step_pin() {
   return step_pin;
+}
+
+ActuatorType RotaryStepper::get_actuator_type() {
+  return actuator_type;
 }
 
 uint16_t RotaryStepper::get_direction_pin() {

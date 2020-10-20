@@ -1,29 +1,34 @@
 import serial
 import protocol
 import time
+import math
 from returns.result import Failure, ResultE, Success
 
 class JointDevice():
 
-    def __init__(self, serial_name, dir_high_is_clockwise, dir_pin, step_pin, homing_offset, baud_rate=9600):
+    def __init__(self, actuator_type, serial_name, dir_high_is_clockwise, dir_pin, step_pin, homing_offset, baud_rate=9600):
         self.parser = protocol.Parser()
+        self.actuator_type = actuator_type
         self.serial_name = serial_name
         self.baud_rate = baud_rate
         self.dir_high_is_clockwise = dir_high_is_clockwise
         self.step_pin = step_pin
         self.dir_pin = dir_pin
         self.homing_offset = homing_offset
+        self.driver_steps = 25000
+        self.gear_ratio = 20 / 58
 
-
+    def steps_to_angle(self, angle):
+        return int(self.driver_steps * angle / (360.0 * self.gear_ratio ))
 
     def _try_to_get_response(self, expected_response_type, MAX_ATTEMTS=20):
         current_attempt = 0
         while current_attempt < MAX_ATTEMTS:
             if self.serial_handler.in_waiting > 0:
                 received_byte = self.serial_handler.read()
-                # print(received_byte)
+                #print(received_byte)
                 parsing_result = self.parser.parse_byte(received_byte)
-                # print(parsing_result.get_state())
+                #print(parsing_result.get_state())
                 if parsing_result.is_parsed():
                     message = parsing_result.get_message()
                     if(message.get_message_type() == expected_response_type):
@@ -49,7 +54,7 @@ class JointDevice():
             return Failure(error)
 
     def configure(self):
-        configure_message = protocol.Message.make_configure_message(self.dir_high_is_clockwise, self.dir_pin, self.step_pin, self.homing_offset)
+        configure_message = protocol.Message.make_configure_message(self.dir_high_is_clockwise, self.dir_pin, self.step_pin, self.homing_offset, self.actuator_type)
         configure_message_result = self._try_to_send_message(configure_message)
         configure_message_result = configure_message_result.bind(lambda message: \
             self._try_to_get_response(protocol.CONFIGURE_RESPONSE_MESSAGE_TYPE))
@@ -104,12 +109,18 @@ class JointDevice():
             protocol.Message.make_int32_from_four_bytes(message.get_data()[0], message.get_data()[1], message.get_data()[2], message.get_data()[3])).value_or(None)
         return result
 
-    def __enter__(self):
+    def open(self):
         self.serial_handler = serial.Serial(self.serial_name, self.baud_rate, timeout=1)
         return self
 
-    def __exit__(self, type, value, traceback):
+    def close(self):
         self.serial_handler.close()
+
+    def __enter__(self):
+        return self.open()
+
+    def __exit__(self, type, value, traceback):
+        self.close()
 
     def home_until_finished(self):
         result = joint.home()
@@ -117,6 +128,7 @@ class JointDevice():
         result = protocol.HomingState.HOMING_NOT_STARTED
         while result != protocol.HomingState.HOMING_FINISHED:
             result = joint.get_home_state()
+            print(result)
 
     def configure_until_finished(self):
         is_finished = lambda result: ( (result[0] == 1 and self.dir_high_is_clockwise) or (result[0] == 0 and not self.dir_high_is_clockwise) ) and \
@@ -140,13 +152,33 @@ class JointDevice():
             print(steps)
 
 if __name__ == '__main__':
-    angular_joint_1_device = JointDevice('/dev/ttyS6', True, 27, 26, -425)
-    angular_joint_2_device = JointDevice('/dev/ttyS11', True, 27, 26, -425)
-    angular_joint_3_device = JointDevice('/dev/ttyS10', True, 27, 26, -425)
-    joints = [angular_joint_1_device, angular_joint_2_device, angular_joint_3_device]
-    for joint in joints:
-        with joint as active_joint:
-            active_joint.configure_until_finished()
-            active_joint.home_until_finished()
-            active_joint.move_to_target_until_is_reached(-10000)
-            active_joint.move_to_target_until_is_reached(0)
+    angular_joint_0_device = JointDevice(protocol.ActuatorType.LINEAR, '/dev/ttyS5', True, 27, 26, 0).open()
+    angular_joint_1_device = JointDevice(protocol.ActuatorType.ROTARY, '/dev/ttyS6', True, 27, 26, -425).open()
+    angular_joint_2_device = JointDevice(protocol.ActuatorType.ROTARY, '/dev/ttyS11', True, 27, 26, -425).open()
+    angular_joint_3_device = JointDevice(protocol.ActuatorType.ROTARY, '/dev/ttyS10', True, 27, 26, -425).open()
+    joints = [angular_joint_0_device] #angular_joint_1_device, angular_joint_2_device, angular_joint_3_device]
+    parameters = [1000] # [ 45, -90, 45 ]
+    for id, joint in enumerate(joints):
+        print(f'Configuring joint {id}')
+        joint.configure_until_finished()
+        print(f'Joint {id} configured')
+        #print(f'Homing joint {id}')
+        #joint.home_until_finished()
+        #print(f'Joint {id} homed')
+    '''
+    for times in range(20):
+        previous_angle = 0
+        current_angles = [angles[0] + (times / 10.), angles[1] - (times / 10.), angles[2]]
+        for id, joint in enumerate(joints):
+            previous_angle = previous_angle + current_angles[id]
+            steps = joint.steps_to_angle(previous_angle)
+            joint.move_to_target_until_is_reached(steps)
+    '''
+    '''
+    for id, joint in enumerate(joints):
+        if id == 0:
+            joint.move_to_target_until_is_reached(parameters[id])
+    '''
+    for id, joint in enumerate(joints):
+        joint.close()
+

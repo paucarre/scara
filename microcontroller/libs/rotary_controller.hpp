@@ -4,9 +4,11 @@
 #include <Arduino.h>
 #include "rotary_stepper.hpp"
 
+
 class RotaryController {
   private:
     int32_t target_steps;
+
   public:
 
     RotaryController():

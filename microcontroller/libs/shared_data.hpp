@@ -1,10 +1,12 @@
 #include "homing_state.hpp"
+#include "homing_state.hpp"
 #pragma once
 
 struct ConfigurationData {
   bool dir_high_is_clockwise = false;
   uint8_t direction_pin = 27;
   uint8_t step_pin = 26;
+  ActuatorType actuator_type = ActuatorType::ROTARY;
   int16_t homing_offset = 0;
 };
 

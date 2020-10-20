@@ -4,36 +4,35 @@
 #include <Arduino.h>
 #include "rotary_stepper.hpp"
 #include "homing_state.hpp"
+#include "homer.hpp"
 
-class RotaryHomer {
+#define CENTER_MAGNETIC_SENSOR_PIN 13
+#define LEFT_MAGNETIC_SENSOR_PIN 14
+#define RIGH_MAGNETIC_SENSOR_PIN 12
+
+class RotaryHomer  : public Homer {
+
   private:
     uint8_t center_magnetic_sensor_pin;
     uint8_t left_magnetic_end_stop_pin;
     uint8_t right_magnetic_end_stop_pin;
     uint16_t steps_with_center_on = 0;
     uint16_t half_steps_backward_left = 0;
-    int16_t homing_offset = 0;
     void check_end_stops(RotaryStepper &rotary_stepper);
+
   public:
-    HomingState homing_state;
     bool rotate_clockwise = true;
     bool center_is_on();
     bool left_is_on();
     bool right_is_on();
     void loop(RotaryStepper &rotary_stepper);
     void setup(RotaryStepper &rotary_stepper);
-    void set_homing_offset(int16_t new_homing_offset) {
-      homing_offset = new_homing_offset;
-    }
-    RotaryHomer(uint8_t _center_magnetic_sensor_pin,
-      uint8_t _left_magnetic_end_stop_pin,
-      uint8_t _right_magnetic_end_stop_pin,
-      int16_t homing_offset_): center_magnetic_sensor_pin(_center_magnetic_sensor_pin),
-                                             left_magnetic_end_stop_pin(_left_magnetic_end_stop_pin),
-                                             right_magnetic_end_stop_pin(_right_magnetic_end_stop_pin),
-                                             homing_offset(homing_offset_),
-                                             homing_state(HomingState::HOMING_NOT_STARTED),
-                                             rotate_clockwise(true) {
+
+    RotaryHomer(): center_magnetic_sensor_pin(CENTER_MAGNETIC_SENSOR_PIN),
+                                            left_magnetic_end_stop_pin(LEFT_MAGNETIC_SENSOR_PIN),
+                                            right_magnetic_end_stop_pin(RIGH_MAGNETIC_SENSOR_PIN),
+                                            rotate_clockwise(true) {
 
     }
+
 };

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdint.h>
+#include "actuator_type.hpp"
 //#include <iostream>
 
 namespace protocol {
@@ -56,8 +57,8 @@ namespace protocol {
 
     static MessageType HOME_MESSAGE_TYPE = MessageType(0x01, 0);
     static MessageType HOME_RESPONSE_MESSAGE_TYPE = MessageType(0x02, 0);
-    static MessageType CONFIGURE_MESSAGE_TYPE = MessageType(0x03, 5);
-    static MessageType CONFIGURE_RESPONSE_MESSAGE_TYPE = MessageType(0x04, 5);
+    static MessageType CONFIGURE_MESSAGE_TYPE = MessageType(0x03, 6);
+    static MessageType CONFIGURE_RESPONSE_MESSAGE_TYPE = MessageType(0x04, 6);
     static MessageType HOMING_STATE_MESSAGE_TYPE = MessageType(0x05, 0);
     static MessageType HOMING_STATE_RESPONSE_MESSAGE_TYPE = MessageType(0x06, 1);
     static MessageType GET_STEPS_MESSAGE_TYPE = MessageType(0x07, 0);
@@ -65,7 +66,7 @@ namespace protocol {
     static MessageType SET_TARGET_STEPS_MESSAGE_TYPE = MessageType(0x09, 4);
     static MessageType SET_TARGET_STEPS_RESPONSE_MESSAGE_TYPE = MessageType(0x0A, 0);
     static MessageType GET_CONFIGURATION_MESSAGE_TYPE = MessageType(0x0B, 0);
-    static MessageType GET_CONFIGURATION_RESPONSE_MESSAGE_TYPE = MessageType(0x0C, 5);
+    static MessageType GET_CONFIGURATION_RESPONSE_MESSAGE_TYPE = MessageType(0x0C, 6);
 
     static MessageType UNDEFINED_MESSAGE_TYPE = MessageType(0xCC, 0);
     static const uint8_t NUMBER_OF_MESSAGES = 12;
@@ -102,13 +103,13 @@ namespace protocol {
                 return message_type;
             }
 
-            static Message make_configure_message(bool dir_high_is_clockwise, uint8_t dir_pin, uint8_t step_pin, int16_t homing_offset){
+            static Message make_configure_message(bool dir_high_is_clockwise, uint8_t dir_pin, uint8_t step_pin, int16_t homing_offset, ActuatorType actuator_type){
 
-                const char data[5] = {(char)dir_high_is_clockwise, (char)dir_pin, (char)step_pin, (char)((homing_offset & 0xFF00) >> 8), (char)(homing_offset & 0x00FF)};
+                const char data[6] = {(char)dir_high_is_clockwise, (char)dir_pin, (char)step_pin, (char)((homing_offset & 0xFF00) >> 8), (char)(homing_offset & 0x00FF), (char)static_cast<int>(actuator_type)};
                 return Message(CONFIGURE_MESSAGE_TYPE, data);
             }
-            static Message make_configure_response_message(bool dir_high_is_clockwise, uint8_t dir_pin, uint8_t step_pin, int16_t homing_offset){
-                const char data[5] = {(char)dir_high_is_clockwise, (char)dir_pin, (char)step_pin, (char)((homing_offset & 0xFF00) >> 8), (char)(homing_offset & 0x00FF)};
+            static Message make_configure_response_message(bool dir_high_is_clockwise, uint8_t dir_pin, uint8_t step_pin, int16_t homing_offset, ActuatorType actuator_type){
+                const char data[6] = {(char)dir_high_is_clockwise, (char)dir_pin, (char)step_pin, (char)((homing_offset & 0xFF00) >> 8), (char)(homing_offset & 0x00FF), (char)static_cast<int>(actuator_type)};
                 return Message(CONFIGURE_RESPONSE_MESSAGE_TYPE, data);
             }
 
@@ -156,8 +157,8 @@ namespace protocol {
                 return Message(GET_CONFIGURATION_MESSAGE_TYPE, data);
             }
 
-            static Message make_get_configuration_response_message(bool dir_high_is_clockwise, char direction_pin, char step_pin, int16_t homing_offset) {
-                const char data[5] = { dir_high_is_clockwise, direction_pin, step_pin, (char)((homing_offset & 0xFF00) >> 8), (char)(homing_offset & 0x00FF)};
+            static Message make_get_configuration_response_message(bool dir_high_is_clockwise, char direction_pin, char step_pin, int16_t homing_offset, ActuatorType actuator_type) {
+                const char data[6] = { dir_high_is_clockwise, direction_pin, step_pin, (char)((homing_offset & 0xFF00) >> 8), (char)(homing_offset & 0x00FF), (char)static_cast<int>(actuator_type)};
                 return Message(GET_CONFIGURATION_RESPONSE_MESSAGE_TYPE, data);
             }
 

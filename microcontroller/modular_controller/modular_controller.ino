@@ -1,8 +1,10 @@
 #include "rotary_stepper.hpp"
 #include "rotary_homer.hpp"
+#include "linear_homer.hpp"
 #include "rotary_controller.hpp"
 #include "shared_data.hpp"
 #include "protocol.hpp"
+#include "homer_builder.hpp"
 
 
 #include "soc/timer_group_struct.h"
@@ -45,12 +47,12 @@ void write_message(protocol::Message message) {
   Serial.flush();
 }
 
+
 void control( void * pvParameters ) {
+  Homer* homer = NULL;
   SharedData controller_data;
-  RotaryStepper rotary_stepper(false, 27, 26);
+  RotaryStepper rotary_stepper(false, 27, 26, 25, ActuatorType::ROTARY);
   rotary_stepper.setup();
-  RotaryHomer rotary_homer(CENTER_MAGNETIC_SENSOR_PIN, LEFT_MAGNETIC_SENSOR_PIN, RIGH_MAGNETIC_SENSOR_PIN, 0);
-  rotary_homer.setup(rotary_stepper);
   uint8_t loops_without_notification = 0;
   for (;;) {
     delayMicroseconds(100);
@@ -60,20 +62,26 @@ void control( void * pvParameters ) {
     auto pull_protocol_configuration = [&] () { controller_data = shared_data; };
     do_safely_sharing_data(pull_protocol_configuration);
     if (controller_data.actions.do_homing) {
-      rotary_homer.loop(rotary_stepper);
-      auto update_homing_state = [&shared_data, &rotary_homer] () { shared_data.homing_state = rotary_homer.homing_state; };
+      if(homer == NULL){
+        homer = HomerBuilder::build_homer(rotary_stepper.get_actuator_type());
+        homer->setup(rotary_stepper);
+      }
+      homer->loop(rotary_stepper);
+      auto update_homing_state = [&shared_data, &homer] () { shared_data.homing_state = homer->get_homing_state(); };
       do_safely_sharing_data(update_homing_state);
     }
     if (controller_data.actions.do_configure) {
       rotary_stepper.configure(
         controller_data.configuration.dir_high_is_clockwise,
         controller_data.configuration.direction_pin,
-        controller_data.configuration.step_pin);
-      rotary_homer.set_homing_offset(controller_data.configuration.homing_offset);
+        controller_data.configuration.step_pin,
+        controller_data.configuration.actuator_type);
+      homer->set_homing_offset(controller_data.configuration.homing_offset);
       auto configuration_finished = [&shared_data, &rotary_stepper] () {
         shared_data.configuration.dir_high_is_clockwise = rotary_stepper.get_dir_high_is_clockwise();
         shared_data.configuration.direction_pin = rotary_stepper.get_direction_pin();
         shared_data.configuration.step_pin = rotary_stepper.get_step_pin();
+        shared_data.configuration.actuator_type = rotary_stepper.get_actuator_type();
         shared_data.actions.do_configure = false;
         };
       do_safely_sharing_data(configuration_finished);
@@ -111,15 +119,17 @@ void communication( void * pvParameters ) {
           uint8_t direction_pin = message.data[1];
           uint8_t step_pin = message.data[2];
           int16_t homing_offset = protocol::Message::make_int16_from_two_bytes(message.data[3], message.data[4]);
-          auto copy_configuration = [&, dir_high_is_clockwise, direction_pin, step_pin, homing_offset] () {
+          ActuatorType actuator_type = static_cast<ActuatorType>(message.data[5]);
+          auto copy_configuration = [&, dir_high_is_clockwise, direction_pin, step_pin, homing_offset, actuator_type] () {
             shared_data.configuration.dir_high_is_clockwise = dir_high_is_clockwise;
             shared_data.configuration.direction_pin = direction_pin;
             shared_data.configuration.step_pin = step_pin;
             shared_data.configuration.homing_offset = homing_offset;
+            shared_data.configuration.actuator_type = actuator_type;
             shared_data.actions.do_configure = true;
           };
           do_safely_sharing_data(copy_configuration);
-          protocol::Message message_return = protocol::Message::make_configure_response_message(dir_high_is_clockwise, direction_pin, step_pin, homing_offset);
+          protocol::Message message_return = protocol::Message::make_configure_response_message(dir_high_is_clockwise, direction_pin, step_pin, homing_offset, actuator_type);
           write_message(message_return);
         } else if(message.get_message_type() == protocol::HOMING_STATE_MESSAGE_TYPE){
           int32_t homing_state = static_cast<int>(HomingState::HOMING_NOT_STARTED);
@@ -144,14 +154,16 @@ void communication( void * pvParameters ) {
           char direction_pin = 0;
           char step_pin = 0;
           int16_t homing_offset = 0;
-          auto configuration = [&shared_data, &dir_high_is_clockwise, &direction_pin, &step_pin, &homing_offset] () {
+          ActuatorType actuator_type = ActuatorType::LINEAR;
+          auto configuration = [&shared_data, &dir_high_is_clockwise, &direction_pin, &step_pin, &homing_offset, &actuator_type] () {
             dir_high_is_clockwise = shared_data.configuration.dir_high_is_clockwise;
             direction_pin = shared_data.configuration.direction_pin;
             step_pin = shared_data.configuration.step_pin;
             homing_offset = shared_data.configuration.homing_offset;
+            actuator_type = shared_data.configuration.actuator_type;
           };
           do_safely_sharing_data(configuration);
-          protocol::Message message_return = protocol::Message::make_get_configuration_response_message(dir_high_is_clockwise, direction_pin, step_pin, homing_offset);
+          protocol::Message message_return = protocol::Message::make_get_configuration_response_message(dir_high_is_clockwise, direction_pin, step_pin, homing_offset, actuator_type);
           write_message(message_return);
         }
       }

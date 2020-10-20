@@ -22,17 +22,30 @@ void init_protocol(py::module &m) {
           .value("PARSING_MESSAGE", protocol::ParsingState::PARSING_MESSAGE)
           .value("FINDING_END_FLAG", protocol::ParsingState::FINDING_END_FLAG);
 
+     py::enum_<ActuatorType>(m, "ActuatorType", py::arithmetic())
+          .value("ROTARY", ActuatorType::ROTARY)
+          .value("LINEAR", ActuatorType::LINEAR)
+          .def_static("from_index", [](std::string index_string) -> ActuatorType {
+               int index = index_string.data()[0];
+               return static_cast<ActuatorType>(index);
+          });
+
+
      py::enum_<HomingState>(m, "HomingState", py::arithmetic())
           .value("HOMING_NOT_STARTED", HomingState::HOMING_NOT_STARTED)
-          .value("MOVE_UNTIL_NO_SENSOR_READ", HomingState::MOVE_UNTIL_NO_SENSOR_READ)
-          .value("FIND_FIRST_SENSOR_READ", HomingState::FIND_FIRST_SENSOR_READ)
-          .value("READ_UNITIL_SENSOR_NO_LONGER_SENSES", HomingState::READ_UNITIL_SENSOR_NO_LONGER_SENSES)
-          .value("REVERSE_DIRECTION_HALF_THE_STEPS", HomingState::REVERSE_DIRECTION_HALF_THE_STEPS)
           .value("HOMING_FINISHED", HomingState::HOMING_FINISHED)
+          .value("ROTARY_MOVE_UNTIL_NO_SENSOR_READ", HomingState::ROTARY_MOVE_UNTIL_NO_SENSOR_READ)
+          .value("ROTARY_FIND_FIRST_SENSOR_READ", HomingState::ROTARY_FIND_FIRST_SENSOR_READ)
+          .value("ROTARY_READ_UNITIL_SENSOR_NO_LONGER_SENSES", HomingState::ROTARY_READ_UNITIL_SENSOR_NO_LONGER_SENSES)
+          .value("ROTARY_REVERSE_DIRECTION_HALF_THE_STEPS", HomingState::ROTARY_REVERSE_DIRECTION_HALF_THE_STEPS)
+          .value("LINEAR_MOVE_UNITL_BOTTOM_END_STOP", HomingState::LINEAR_MOVE_UNITL_BOTTOM_END_STOP)
+          .value("LINEAR_MOVE_UNTIL_TOP_END_STOP", HomingState::LINEAR_MOVE_UNTIL_TOP_END_STOP)
+          .value("LINEAR_MOVE_TO_HALF", HomingState::LINEAR_MOVE_TO_HALF)
           .def_static("from_index", [](std::string index_string) -> HomingState {
                int index = index_string.data()[0];
                return static_cast<HomingState>(index);
           });
+
 
      py::enum_<protocol::ParsingError>(m, "ParsingError", py::arithmetic())
         .value("NO_ERROR", protocol::ParsingError::NO_ERROR)
