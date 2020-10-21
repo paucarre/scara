@@ -6,14 +6,15 @@
 
 static RotaryHomer rotary_homer;
 static LinearHomer linear_homer;
+
 class HomerBuilder {
 
     public:
-        static Homer* build_homer(ActuatorType actuator_type) {
+        static Homer& build_homer(ActuatorType actuator_type) {
             if(actuator_type == ActuatorType::ROTARY) {
-                return &rotary_homer;
+                return rotary_homer;
             } else {
-                return &linear_homer;
+                return linear_homer;
             }
         }
 };

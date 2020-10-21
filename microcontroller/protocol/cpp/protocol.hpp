@@ -158,7 +158,7 @@ namespace protocol {
             }
 
             static Message make_get_configuration_response_message(bool dir_high_is_clockwise, char direction_pin, char step_pin, int16_t homing_offset, ActuatorType actuator_type) {
-                const char data[6] = { dir_high_is_clockwise, direction_pin, step_pin, (char)((homing_offset & 0xFF00) >> 8), (char)(homing_offset & 0x00FF), (char)static_cast<int>(actuator_type)};
+                const char data[6] = { dir_high_is_clockwise, direction_pin, step_pin, (char)((homing_offset & 0xFF00) >> 8), (char)(homing_offset & 0x00FF), static_cast<int>(actuator_type)};
                 return Message(GET_CONFIGURATION_RESPONSE_MESSAGE_TYPE, data);
             }
 

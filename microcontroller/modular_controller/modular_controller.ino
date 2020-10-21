@@ -10,12 +10,6 @@
 #include "soc/timer_group_struct.h"
 #include "soc/timer_group_reg.h"
 
-
-#define CENTER_MAGNETIC_SENSOR_PIN 13
-#define LEFT_MAGNETIC_SENSOR_PIN 14
-#define RIGH_MAGNETIC_SENSOR_PIN 12
-
-
 SharedData shared_data;
 SemaphoreHandle_t mutex;
 protocol::Parser parser;
@@ -49,7 +43,7 @@ void write_message(protocol::Message message) {
 
 
 void control( void * pvParameters ) {
-  Homer* homer = NULL;
+  Homer& homer = HomerBuilder::build_homer(ActuatorType::ROTARY);;
   SharedData controller_data;
   RotaryStepper rotary_stepper(false, 27, 26, 25, ActuatorType::ROTARY);
   rotary_stepper.setup();
@@ -62,12 +56,10 @@ void control( void * pvParameters ) {
     auto pull_protocol_configuration = [&] () { controller_data = shared_data; };
     do_safely_sharing_data(pull_protocol_configuration);
     if (controller_data.actions.do_homing) {
-      if(homer == NULL){
-        homer = HomerBuilder::build_homer(rotary_stepper.get_actuator_type());
-        homer->setup(rotary_stepper);
-      }
-      homer->loop(rotary_stepper);
-      auto update_homing_state = [&shared_data, &homer] () { shared_data.homing_state = homer->get_homing_state(); };
+      homer = HomerBuilder::build_homer(rotary_stepper.get_actuator_type());
+      homer.setup(rotary_stepper);
+      homer.loop(rotary_stepper);
+      auto update_homing_state = [&shared_data, &homer] () { shared_data.homing_state = homer.get_homing_state(); };
       do_safely_sharing_data(update_homing_state);
     }
     if (controller_data.actions.do_configure) {
@@ -76,7 +68,7 @@ void control( void * pvParameters ) {
         controller_data.configuration.direction_pin,
         controller_data.configuration.step_pin,
         controller_data.configuration.actuator_type);
-      homer->set_homing_offset(controller_data.configuration.homing_offset);
+      homer.set_homing_offset(controller_data.configuration.homing_offset);
       auto configuration_finished = [&shared_data, &rotary_stepper] () {
         shared_data.configuration.dir_high_is_clockwise = rotary_stepper.get_dir_high_is_clockwise();
         shared_data.configuration.direction_pin = rotary_stepper.get_direction_pin();
@@ -154,7 +146,7 @@ void communication( void * pvParameters ) {
           char direction_pin = 0;
           char step_pin = 0;
           int16_t homing_offset = 0;
-          ActuatorType actuator_type = ActuatorType::LINEAR;
+          ActuatorType actuator_type = ActuatorType::ROTARY;
           auto configuration = [&shared_data, &dir_high_is_clockwise, &direction_pin, &step_pin, &homing_offset, &actuator_type] () {
             dir_high_is_clockwise = shared_data.configuration.dir_high_is_clockwise;
             direction_pin = shared_data.configuration.direction_pin;

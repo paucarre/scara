@@ -136,10 +136,13 @@ class JointDevice():
             (result[2] == self.step_pin) and \
             (protocol.Message.make_int16_from_two_bytes(result[3], result[4]) == self.homing_offset)
         result = joint.configure()
-        result = joint.get_configuration()
+        #print(result)
+        result = joint.configure()
+        #print(result)
         while not is_finished(result):
             time.sleep(0.1)
             result = joint.get_configuration()
+        return result
 
     def move_to_target_until_is_reached(self, target_steps):
         #print(f"---- {target_steps} ----")
@@ -152,19 +155,23 @@ class JointDevice():
             print(steps)
 
 if __name__ == '__main__':
-    angular_joint_0_device = JointDevice(protocol.ActuatorType.LINEAR, '/dev/ttyS5', True, 27, 26, 0).open()
+    #angular_joint_0_device = JointDevice(protocol.ActuatorType.LINEAR, '/dev/ttyS5', True, 27, 26, 0).open()
     angular_joint_1_device = JointDevice(protocol.ActuatorType.ROTARY, '/dev/ttyS6', True, 27, 26, -425).open()
     angular_joint_2_device = JointDevice(protocol.ActuatorType.ROTARY, '/dev/ttyS11', True, 27, 26, -425).open()
     angular_joint_3_device = JointDevice(protocol.ActuatorType.ROTARY, '/dev/ttyS10', True, 27, 26, -425).open()
-    joints = [angular_joint_0_device] #angular_joint_1_device, angular_joint_2_device, angular_joint_3_device]
+    #joints = [angular_joint_0_device] #angular_joint_1_device, angular_joint_2_device, angular_joint_3_device]
+    joints = [angular_joint_1_device, angular_joint_2_device, angular_joint_3_device]
+    parameters = [ 45, -90, 45 ]
+    '''
     parameters = [1000] # [ 45, -90, 45 ]
+    '''
     for id, joint in enumerate(joints):
         print(f'Configuring joint {id}')
         joint.configure_until_finished()
         print(f'Joint {id} configured')
-        #print(f'Homing joint {id}')
-        #joint.home_until_finished()
-        #print(f'Joint {id} homed')
+        print(f'Homing joint {id}')
+        joint.home_until_finished()
+        print(f'Joint {id} homed')
     '''
     for times in range(20):
         previous_angle = 0
@@ -174,6 +181,7 @@ if __name__ == '__main__':
             steps = joint.steps_to_angle(previous_angle)
             joint.move_to_target_until_is_reached(steps)
     '''
+
     '''
     for id, joint in enumerate(joints):
         if id == 0:
