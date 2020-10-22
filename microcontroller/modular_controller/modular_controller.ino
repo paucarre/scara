@@ -43,23 +43,27 @@ void write_message(protocol::Message message) {
 
 
 void control( void * pvParameters ) {
-  Homer& homer = HomerBuilder::build_homer(ActuatorType::ROTARY);;
+  Homer* homer = &HomerBuilder::build_homer(ActuatorType::ROTARY);
   SharedData controller_data;
   RotaryStepper rotary_stepper(false, 27, 26, 25, ActuatorType::ROTARY);
   rotary_stepper.setup();
+  bool homer_is_initialized = false;
   uint8_t loops_without_notification = 0;
   for (;;) {
-    delayMicroseconds(100);
+    delayMicroseconds(5);
     TIMERG0.wdt_wprotect=TIMG_WDT_WKEY_VALUE;
     TIMERG0.wdt_feed=1;
     TIMERG0.wdt_wprotect=0;
     auto pull_protocol_configuration = [&] () { controller_data = shared_data; };
     do_safely_sharing_data(pull_protocol_configuration);
     if (controller_data.actions.do_homing) {
-      homer = HomerBuilder::build_homer(rotary_stepper.get_actuator_type());
-      homer.setup(rotary_stepper);
-      homer.loop(rotary_stepper);
-      auto update_homing_state = [&shared_data, &homer] () { shared_data.homing_state = homer.get_homing_state(); };
+      if(!homer_is_initialized){
+        homer = &HomerBuilder::build_homer(rotary_stepper.get_actuator_type());
+        homer->setup(rotary_stepper);
+        homer_is_initialized = true;
+      }
+      homer->loop(rotary_stepper);
+      auto update_homing_state = [&shared_data, &homer] () { shared_data.homing_state = homer->get_homing_state(); };
       do_safely_sharing_data(update_homing_state);
     }
     if (controller_data.actions.do_configure) {
@@ -68,7 +72,7 @@ void control( void * pvParameters ) {
         controller_data.configuration.direction_pin,
         controller_data.configuration.step_pin,
         controller_data.configuration.actuator_type);
-      homer.set_homing_offset(controller_data.configuration.homing_offset);
+      homer->set_homing_offset(controller_data.configuration.homing_offset);
       auto configuration_finished = [&shared_data, &rotary_stepper] () {
         shared_data.configuration.dir_high_is_clockwise = rotary_stepper.get_dir_high_is_clockwise();
         shared_data.configuration.direction_pin = rotary_stepper.get_direction_pin();
@@ -102,7 +106,7 @@ void communication( void * pvParameters ) {
       if (parsing_result.get_is_parsed()) {
         protocol::Message message = parsing_result.get_message();
         if (message.get_message_type() == protocol::HOME_MESSAGE_TYPE) {
-          auto activate_homing = [&] () { shared_data.actions.do_homing = true; };
+          auto activate_homing = [&shared_data] () { shared_data.actions.do_homing = true; };
           do_safely_sharing_data(activate_homing);
           protocol::Message message_return = protocol::Message::make_homing_response_message();
           write_message(message_return);
@@ -124,7 +128,7 @@ void communication( void * pvParameters ) {
           protocol::Message message_return = protocol::Message::make_configure_response_message(dir_high_is_clockwise, direction_pin, step_pin, homing_offset, actuator_type);
           write_message(message_return);
         } else if(message.get_message_type() == protocol::HOMING_STATE_MESSAGE_TYPE){
-          int32_t homing_state = static_cast<int>(HomingState::HOMING_NOT_STARTED);
+          int32_t homing_state = static_cast<int>(HomingState::LINEAR_MOVE_UNTIL_TOP_END_STOP);
           auto get_homing_state = [&homing_state, &shared_data] () { homing_state = static_cast<int>(shared_data.homing_state); };
           do_safely_sharing_data(get_homing_state);
           protocol::Message message_return = protocol::Message::make_homing_state_response_message((char)(0x000F & homing_state));

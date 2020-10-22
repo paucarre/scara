@@ -1,11 +1,11 @@
 #include "linear_homer.hpp"
 
 bool LinearHomer::top_end_stop_is_on() {
-  return digitalRead(top_end_stop_pin);
+  return !digitalRead(top_end_stop_pin);
 }
 
 bool LinearHomer::bottom_end_stop_is_on() {
-  return digitalRead(bottom_end_stop_pin);
+  return !digitalRead(bottom_end_stop_pin);
 }
 
 void LinearHomer::loop(RotaryStepper &rotary_stepper){
@@ -47,5 +47,4 @@ void LinearHomer::loop(RotaryStepper &rotary_stepper){
 void LinearHomer::setup(RotaryStepper &rotary_stepper) {
   pinMode(top_end_stop_pin, INPUT);
   pinMode(bottom_end_stop_pin, INPUT);
-  rotary_stepper.apply_direction(rotate_clockwise);
 }

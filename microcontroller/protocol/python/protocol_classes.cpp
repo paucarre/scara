@@ -25,11 +25,9 @@ void init_protocol(py::module &m) {
      py::enum_<ActuatorType>(m, "ActuatorType", py::arithmetic())
           .value("ROTARY", ActuatorType::ROTARY)
           .value("LINEAR", ActuatorType::LINEAR)
-          .def_static("from_index", [](std::string index_string) -> ActuatorType {
-               int index = index_string.data()[0];
+          .def_static("from_index", [](int index) -> ActuatorType {
                return static_cast<ActuatorType>(index);
           });
-
 
      py::enum_<HomingState>(m, "HomingState", py::arithmetic())
           .value("HOMING_NOT_STARTED", HomingState::HOMING_NOT_STARTED)

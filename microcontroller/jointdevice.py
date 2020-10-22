@@ -124,6 +124,7 @@ class JointDevice():
 
     def home_until_finished(self):
         result = joint.home()
+        #print(result)
         time.sleep(0.5)
         result = protocol.HomingState.HOMING_NOT_STARTED
         while result != protocol.HomingState.HOMING_FINISHED:
@@ -134,11 +135,13 @@ class JointDevice():
         is_finished = lambda result: ( (result[0] == 1 and self.dir_high_is_clockwise) or (result[0] == 0 and not self.dir_high_is_clockwise) ) and \
             (result[1] == self.dir_pin) and \
             (result[2] == self.step_pin) and \
-            (protocol.Message.make_int16_from_two_bytes(result[3], result[4]) == self.homing_offset)
+            (protocol.Message.make_int16_from_two_bytes(result[3], result[4]) == self.homing_offset) and \
+            (protocol.ActuatorType.from_index(result[5]) == self.actuator_type)
+        print(self.actuator_type)
         result = joint.configure()
-        #print(result)
+        print(result)
         result = joint.configure()
-        #print(result)
+        print(result)
         while not is_finished(result):
             time.sleep(0.1)
             result = joint.get_configuration()
@@ -155,16 +158,17 @@ class JointDevice():
             print(steps)
 
 if __name__ == '__main__':
-    #angular_joint_0_device = JointDevice(protocol.ActuatorType.LINEAR, '/dev/ttyS5', True, 27, 26, 0).open()
+    angular_joint_0_device = JointDevice(protocol.ActuatorType.LINEAR, '/dev/ttyS5', False, 27, 26, 0).open()
     angular_joint_1_device = JointDevice(protocol.ActuatorType.ROTARY, '/dev/ttyS6', True, 27, 26, -425).open()
     angular_joint_2_device = JointDevice(protocol.ActuatorType.ROTARY, '/dev/ttyS11', True, 27, 26, -425).open()
     angular_joint_3_device = JointDevice(protocol.ActuatorType.ROTARY, '/dev/ttyS10', True, 27, 26, -425).open()
-    #joints = [angular_joint_0_device] #angular_joint_1_device, angular_joint_2_device, angular_joint_3_device]
-    joints = [angular_joint_1_device, angular_joint_2_device, angular_joint_3_device]
+    joints = [angular_joint_0_device]
+    #joints = [angular_joint_1_device, angular_joint_2_device, angular_joint_3_device]
+    '''
     parameters = [ 45, -90, 45 ]
     '''
     parameters = [1000] # [ 45, -90, 45 ]
-    '''
+
     for id, joint in enumerate(joints):
         print(f'Configuring joint {id}')
         joint.configure_until_finished()
