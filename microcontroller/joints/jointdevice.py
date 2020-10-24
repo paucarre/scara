@@ -3,6 +3,7 @@ import protocol
 import time
 import math
 from returns.result import Failure, ResultE, Success
+from multiprocessing import Process
 
 class JointDevice():
 
@@ -123,12 +124,12 @@ class JointDevice():
         self.close()
 
     def home_until_finished(self):
-        result = joint.home()
+        result = self.home()
         #print(result)
         time.sleep(0.5)
         result = protocol.HomingState.HOMING_NOT_STARTED
         while result != protocol.HomingState.HOMING_FINISHED:
-            result = joint.get_home_state()
+            result = self.get_home_state()
             print(result)
 
     def configure_until_finished(self):
@@ -138,44 +139,30 @@ class JointDevice():
             (protocol.Message.make_int16_from_two_bytes(result[3], result[4]) == self.homing_offset) and \
             (protocol.ActuatorType.from_index(result[5]) == self.actuator_type)
         print(self.actuator_type)
-        result = joint.configure()
+        result = self.configure()
         print(result)
-        result = joint.configure()
+        result = self.configure()
         print(result)
         while not is_finished(result):
             time.sleep(0.1)
-            result = joint.get_configuration()
+            result = self.get_configuration()
         return result
 
     def move_to_target_until_is_reached(self, target_steps):
         #print(f"---- {target_steps} ----")
-        result = joint.set_target_steps(target_steps)
+        result = self.set_target_steps(target_steps)
         #print(result)
-        steps = joint.get_steps()
+        steps = self.get_steps()
         #print(steps)
         while steps is None or steps != target_steps:
-            steps = joint.get_steps()
+            steps = self.get_steps()
             print(steps)
 
-if __name__ == '__main__':
-    angular_joint_0_device = JointDevice(protocol.ActuatorType.LINEAR, '/dev/ttyS5', False, 27, 26, 0).open()
-    angular_joint_1_device = JointDevice(protocol.ActuatorType.ROTARY, '/dev/ttyS6', True, 27, 26, -425).open()
-    angular_joint_2_device = JointDevice(protocol.ActuatorType.ROTARY, '/dev/ttyS11', True, 27, 26, -425).open()
-    angular_joint_3_device = JointDevice(protocol.ActuatorType.ROTARY, '/dev/ttyS10', True, 27, 26, -425).open()
-    joints = [angular_joint_0_device]
-    #joints = [angular_joint_1_device, angular_joint_2_device, angular_joint_3_device]
-    '''
-    parameters = [ 45, -90, 45 ]
-    '''
-    parameters = [1000] # [ 45, -90, 45 ]
 
-    for id, joint in enumerate(joints):
-        print(f'Configuring joint {id}')
-        joint.configure_until_finished()
-        print(f'Joint {id} configured')
-        print(f'Homing joint {id}')
-        joint.home_until_finished()
-        print(f'Joint {id} homed')
+
+
+    #for id, joint in enumerate(joints):
+
     '''
     for times in range(20):
         previous_angle = 0
@@ -191,6 +178,7 @@ if __name__ == '__main__':
         if id == 0:
             joint.move_to_target_until_is_reached(parameters[id])
     '''
+    '''
     for id, joint in enumerate(joints):
         joint.close()
-
+    '''

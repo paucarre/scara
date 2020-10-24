@@ -50,7 +50,6 @@ void control( void * pvParameters ) {
   bool homer_is_initialized = false;
   uint8_t loops_without_notification = 0;
   for (;;) {
-    delayMicroseconds(5);
     TIMERG0.wdt_wprotect=TIMG_WDT_WKEY_VALUE;
     TIMERG0.wdt_feed=1;
     TIMERG0.wdt_wprotect=0;
