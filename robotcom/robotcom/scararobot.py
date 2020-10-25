@@ -1,4 +1,4 @@
-from jointdevice import JointDevice
+from robotcom.jointdevice import JointDevice
 from multiprocessing import Process, Manager
 import protocol
 
@@ -17,7 +17,6 @@ class ScaraRobot():
         self.angular_joints = [self.angular_joint_1_device, self.angular_joint_2_device, self.angular_joint_3_device]
         self.linear_joints = [self.linear_joint_0_device]
         self.joints = self.linear_joints + self.angular_joints
-        self.thread_pool = ThreadPool(processes=len(self.joints))
 
     def open(self):
         [joint.open() for joint in self.joints]

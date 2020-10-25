@@ -1,5 +1,6 @@
+build
 install_manifest.txt
-.ipynb_checkpoints 
+.ipynb_checkpoints
 nohup.out
 *.so
 *.a
@@ -12,3 +13,5 @@ cmake_install.cmake
 *.numpy
 .vscode
 *.svg
+*.egg-info
+*.egg
