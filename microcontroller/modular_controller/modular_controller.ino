@@ -49,10 +49,10 @@ void control( void * pvParameters ) {
   rotary_stepper.setup();
   bool homer_is_initialized = false;
   uint8_t loops_without_notification = 0;
-  for (;;) {
+  for (;;) {    
     TIMERG0.wdt_wprotect=TIMG_WDT_WKEY_VALUE;
     TIMERG0.wdt_feed=1;
-    TIMERG0.wdt_wprotect=0;
+    TIMERG0.wdt_wprotect=0;    
     auto pull_protocol_configuration = [&] () { controller_data = shared_data; };
     do_safely_sharing_data(pull_protocol_configuration);
     if (controller_data.actions.do_homing) {
