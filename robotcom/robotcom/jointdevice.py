@@ -16,11 +16,6 @@ class JointDevice():
         self.step_pin = step_pin
         self.dir_pin = dir_pin
         self.homing_offset = homing_offset
-        self.driver_steps = 25000
-        self.gear_ratio = 20 / 58
-
-    def steps_to_angle(self, angle):
-        return int(self.driver_steps * angle / (360.0 * self.gear_ratio ))
 
     def _try_to_get_response(self, expected_response_type, MAX_ATTEMTS=20):
         current_attempt = 0
@@ -157,28 +152,3 @@ class JointDevice():
         while steps is None or steps != target_steps:
             steps = self.get_steps()
             print(steps)
-
-
-
-
-    #for id, joint in enumerate(joints):
-
-    '''
-    for times in range(20):
-        previous_angle = 0
-        current_angles = [angles[0] + (times / 10.), angles[1] - (times / 10.), angles[2]]
-        for id, joint in enumerate(joints):
-            previous_angle = previous_angle + current_angles[id]
-            steps = joint.steps_to_angle(previous_angle)
-            joint.move_to_target_until_is_reached(steps)
-    '''
-
-    '''
-    for id, joint in enumerate(joints):
-        if id == 0:
-            joint.move_to_target_until_is_reached(parameters[id])
-    '''
-    '''
-    for id, joint in enumerate(joints):
-        joint.close()
-    '''

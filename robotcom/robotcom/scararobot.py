@@ -59,7 +59,6 @@ class ScaraRobot():
         close_processes = [Process(target=ScaraRobot.close_joint, args=(id, joint,)) for id, joint in enumerate(self.joints)]
         [close_process.start() for close_process in close_processes]
         [close_process.join() for close_process in close_processes]
-        self.pool.close()
 
     @staticmethod
     def close_joint(id, joint):
@@ -95,7 +94,7 @@ if __name__ == '__main__':
     scara_robot.home()
     target_steps = [1000, 10000, -10000, -10000]
     mult = 1
-    for i in range(0, 50):
+    for i in range(0, 10):
         move_proceses = scara_robot.move(target_steps)
         scara_robot.wait_until_target_reached(target_steps)
         mult = mult * -1
