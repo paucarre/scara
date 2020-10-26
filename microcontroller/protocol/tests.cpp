@@ -468,6 +468,8 @@ int main(int argc, char **argv) {
     get_steps_response_creation_message_parsing(30000);
     get_steps_response_creation_message_parsing(-30);
     get_steps_response_creation_message_parsing(30);
+    get_steps_response_creation_message_parsing(-10134);
+
 
     set_steps_message_parsing(-100000);
     set_steps_message_parsing(100000);
@@ -476,6 +478,7 @@ int main(int argc, char **argv) {
     set_steps_message_parsing(30000);
     set_steps_message_parsing(-30);
     set_steps_message_parsing(30);
+    set_steps_message_parsing(-10134);
 
     configure_message_test();
     configure_message_test_2();

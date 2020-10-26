@@ -51,7 +51,7 @@ class ScaraRobot():
 
     @staticmethod
     def move_joint(id, joint, target_steps):
-        print(f'Moving joint {id}')
+        print(f'Moving joint {id} to {target_steps}')
         result = joint.set_target_steps(target_steps)
         print(f'Joint {id} moved to {result}')
 
@@ -92,7 +92,7 @@ if __name__ == '__main__':
     scara_robot.open()
     scara_robot.configure()
     scara_robot.home()
-    target_steps = [1000, 10000, -10000, -10000]
+    target_steps = [1000, 10000, -10134, -10000]
     mult = 1
     for i in range(0, 10):
         move_proceses = scara_robot.move(target_steps)

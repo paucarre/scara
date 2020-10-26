@@ -22,7 +22,7 @@ class JointDevice():
         while current_attempt < MAX_ATTEMTS:
             if self.serial_handler.in_waiting > 0:
                 received_byte = self.serial_handler.read()
-                #print(received_byte)
+                print(received_byte)
                 parsing_result = self.parser.parse_byte(received_byte)
                 #print(parsing_result.get_state())
                 if parsing_result.is_parsed():
@@ -103,9 +103,6 @@ class JointDevice():
             self._try_to_get_response(protocol.GET_STEPS_RESPONSE_MESSAGE_TYPE))
         result = result.map(lambda message: \
             protocol.Message.make_int32_from_four_bytes(message.get_data()[0], message.get_data()[1], message.get_data()[2], message.get_data()[3])).value_or(None)
-        if result is None:
-            self.close()
-            self.open()
         return result
 
     def open(self):

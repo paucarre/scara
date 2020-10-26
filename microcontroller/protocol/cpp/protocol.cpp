@@ -46,11 +46,17 @@ namespace protocol {
 
 
     ParsingResult Parser::parse_byte(char data) {
-        //std::cout << "data " << (int)data << std::endl;
+        //std::cout << "Begin - Data: " << std::hex << (0xFF & data) << std::endl;
+        //std::cout << "Begin - Parsed Data: ";
+        // for(int i = 0;i < data_index;i++){
+        //    std::cout << std::hex << (0xFF & parsed_data[i]) << " ";
+        //}
+        //std::cout << std::endl;
         ParsingError parsing_error = ParsingError::NO_ERROR;
         switch(state) {
             case ParsingState::FINDING_START_FLAG:
                 {
+                    //std::cout << "State - FINDING_START_FLAG" << std::endl;
                     if(data == START_FLAG) {
                         state = ParsingState::FINDING_MESSAGE_LABEL;
                     } else {
@@ -60,6 +66,7 @@ namespace protocol {
                 }
             case ParsingState::FINDING_MESSAGE_LABEL:
                 {
+                    //std::cout << "State - FINDING_MESSAGE_LABEL" << std::endl;
                     message_type = UNDEFINED_MESSAGE_TYPE;
                     for(uint8_t i = 0;(message_type.get_label() == UNDEFINED_MESSAGE_TYPE.get_label()) && i < NUMBER_OF_MESSAGES;++i){
                         if(MESSAGES[i].get_label() == data) {
@@ -73,9 +80,6 @@ namespace protocol {
                         state = ParsingState::PARSING_MESSAGE;
                         data_index = 0;
                         checksum = message_type.get_label();
-                        //parsed_data[data_index] = data;
-                        //std::cout << "parsed data " << (int)data << std::endl;
-                        //data_index++;
                         previous_data_was_escaped = false;
 
                     }
@@ -83,24 +87,24 @@ namespace protocol {
                 }
             case ParsingState::PARSING_MESSAGE:
                 {
-                    //std::cout << (int) data << std::endl;
-                    if(data_index == message_type.get_data_length() && data != ESCAPE_FLAG){
-                        //std::cout << "validating checksum  " << std::endl;
+                    //std::cout << "State - PARSING_MESSAGE" << std::endl;
+                    if(data_index == message_type.get_data_length() && (previous_data_was_escaped || data != ESCAPE_FLAG)){
+                        //std::cout << "\tDATA PARSED - VALIDATING CHECKSUM: " <<  std::hex << (0xFF & data)  << std::endl;
                         parsing_error = validate_checksum(checksum, data);
                     } else {
                         if(previous_data_was_escaped){
                             parsed_data[data_index++] = data;
                             checksum = checksum ^ data;
-                            //std::cout << "parsed data " << (int)data << std::endl;
+                            //std::cout << "\tPARSING_MESSAGE - Previous was escaped - Data added to parsed " <<  std::hex << (0xFF & data) << std::endl;
                             previous_data_was_escaped = false;
                         } else {
                             if(data == ESCAPE_FLAG){
-                                //std::cout << " ESCAPE FOUND "  << std::endl;
+                                //std::cout << "\tPARSING_MESSAGE - ESCAPE FOUND " << std::hex << (0xFF & data) << std::endl;
                                 previous_data_was_escaped = true;
                             } else {
                                 parsed_data[data_index++] = data;
                                 checksum = checksum ^ data;
-                                //std::cout << "parsed data not escape " << (int)data << std::endl;
+                                //std::cout << "\tPARSING_MESSAGE - Previous was NOT escaped - Data added to parsed " <<  std::hex << (0xFF & data) << std::endl;
                                 previous_data_was_escaped = false;
                             }
                         }
@@ -109,14 +113,10 @@ namespace protocol {
                 }
             case ParsingState::FINDING_END_FLAG:
                 {
+                    //std::cout << "State - FINDING_END_FLAG" << std::endl;
                     state = ParsingState::FINDING_START_FLAG;
                     if(data == END_FLAG) {
                         Message message(message_type, parsed_data);
-                        //std::cout << "Final: " << std::endl;
-                        //for(int i = 0;i < data_index;i++){
-                            //std::cout << (int) parsed_data[i];
-                        //}
-                        //std::cout << std::endl;
                         return ParsingResult(state, parsing_error, message, true);
                     } else {
                         parsing_error = ParsingError::END_FLAG_NOT_FOUND;
