@@ -34,21 +34,23 @@ if __name__ == '__main__':
     scara_robot.open()
     scara_robot.configure()
     scara_robot.home()
-    samples = 50
+    samples = 25
     radius = 80
     angle_step = ( (2 * math.pi) / samples)
-    for sample in range(samples):
-        x_target = (426 - radius) + (radius * math.cos(sample *  angle_step))
-        y_target = radius * math.sin(sample * angle_step)
-        ik_solutions = ik_controller.get_angles(x_target, y_target, 0, 1, 0)
-        if (len(ik_solutions) > 0):
-            ik_solution = ik_solutions[0]
-            print(ik_solution)
-            steps_solution = ik_controller.get_steps(ik_solution)
-            print(steps_solution)
-            target_steps = [1000] + steps_solution
-            move_proceses = scara_robot.move(target_steps)
-            scara_robot.wait_until_target_reached(target_steps)
-        else:
-            print('No IK solution')
+    loops = 10
+    for loop in range(loops):
+        for sample in range(samples):
+            x_target = (426 - radius) + (radius * math.cos(sample *  angle_step))
+            y_target = radius * math.sin(sample * angle_step)
+            ik_solutions = ik_controller.get_angles(x_target, y_target, 0, 1, 0)
+            if (len(ik_solutions) > 0):
+                ik_solution = ik_solutions[0]
+                print(ik_solution)
+                steps_solution = ik_controller.get_steps(ik_solution)
+                print(steps_solution)
+                target_steps = [1000] + steps_solution
+                move_proceses = scara_robot.move(target_steps)
+                #scara_robot.wait_until_target_reached(target_steps)
+            else:
+                print('No IK solution')
     scara_robot.close()
