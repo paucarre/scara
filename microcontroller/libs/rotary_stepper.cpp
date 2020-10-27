@@ -20,10 +20,10 @@ void RotaryStepper::apply_direction(bool rotate_clockwise) {
   }
 }
 
-void RotaryStepper::set_steps_to_zero() {
-  steps = 0;
-}
+void RotaryStepper::set_steps(int32_t steps_) {
+  steps = steps_;
 
+}
 void RotaryStepper::step() {
   digitalWrite(this->step_pin, HIGH);
   delayMicroseconds(50);

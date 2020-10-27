@@ -10,7 +10,7 @@ class ScaraRobot():
     '''
 
     def __init__(self):
-        self.linear_joint_0_device = JointDevice(protocol.ActuatorType.LINEAR, '/dev/ttyS5', False, 27, 26, 0)
+        self.linear_joint_0_device = JointDevice(protocol.ActuatorType.LINEAR, '/dev/ttyS5', True, 27, 26, 0)
         self.angular_joint_1_device = JointDevice(protocol.ActuatorType.ROTARY, '/dev/ttyS6', True, 27, 26, -425)
         self.angular_joint_2_device = JointDevice(protocol.ActuatorType.ROTARY, '/dev/ttyS11', True, 27, 26, -425)
         self.angular_joint_3_device = JointDevice(protocol.ActuatorType.ROTARY, '/dev/ttyS10', True, 27, 26, -425)
@@ -92,11 +92,11 @@ if __name__ == '__main__':
     scara_robot.open()
     scara_robot.configure()
     scara_robot.home()
-    target_steps = [1000, 10000, -10134, -10000]
+    target_steps = [30000, 10000, -10134, -10000]
     mult = 1
     for i in range(0, 10):
         move_proceses = scara_robot.move(target_steps)
         scara_robot.wait_until_target_reached(target_steps)
         mult = mult * -1
-        target_steps = [e * mult for e in target_steps]
+        target_steps = [e * mult if idx > 0 else e for idx, e in enumerate(target_steps)]
     scara_robot.close()

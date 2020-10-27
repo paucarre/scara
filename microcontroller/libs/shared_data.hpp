@@ -20,9 +20,15 @@ struct ControlData {
   int32_t target_steps = 0;
 };
 
+struct ControlConfigurationData {
+  uint16_t error_constant = 0;
+  uint16_t max_microseconds_delay = 0;
+};
+
 struct SharedData {
   ActionsData  actions;
   HomingState homing_state = HomingState::HOMING_NOT_STARTED;
   ConfigurationData configuration;
   ControlData control;
+  ControlConfigurationData control_configuration_data;
 };

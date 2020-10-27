@@ -27,7 +27,7 @@ class RotaryStepper {
     void setup();
     void step();
     void apply_direction(bool rotate_clockwise);
-    void set_steps_to_zero();
+    void set_steps(int32_t steps);
     void enable(bool is_enabled);
 
     void configure(bool dir_high_is_clockwise_, uint16_t direction_pin_, uint16_t step_pin_, ActuatorType actuator_type_);

@@ -54,7 +54,7 @@ void RotaryHomer::loop(RotaryStepper &rotary_stepper){
           half_steps_backward_left --;
         } else {
           homing_state = HomingState::HOMING_FINISHED;
-          rotary_stepper.set_steps_to_zero();
+          rotary_stepper.set_steps(0);
         }
       }
     } else {

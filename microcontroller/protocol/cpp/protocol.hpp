@@ -67,16 +67,23 @@ namespace protocol {
     static MessageType SET_TARGET_STEPS_RESPONSE_MESSAGE_TYPE = MessageType(0x0A, 0);
     static MessageType GET_CONFIGURATION_MESSAGE_TYPE = MessageType(0x0B, 0);
     static MessageType GET_CONFIGURATION_RESPONSE_MESSAGE_TYPE = MessageType(0x0C, 6);
+    static MessageType SET_CONTROL_CONFIGURATION_MESSAGE_TYPE = MessageType(0x0D, 4);
+    static MessageType SET_CONTROL_CONFIGURATION_RESPONSE_MESSAGE_TYPE = MessageType(0x0E, 4);
+    static MessageType GET_CONTROL_CONFIGURATION_MESSAGE_TYPE = MessageType(0x0F, 0);
+    static MessageType GET_CONTROL_CONFIGURATION_RESPONSE_MESSAGE_TYPE = MessageType(0x10, 4);
 
     static MessageType UNDEFINED_MESSAGE_TYPE = MessageType(0xCC, 0);
-    static const uint8_t NUMBER_OF_MESSAGES = 12;
+    static const uint8_t NUMBER_OF_MESSAGES = 16;
     static MessageType MESSAGES[NUMBER_OF_MESSAGES] = {
         HOME_MESSAGE_TYPE, HOME_RESPONSE_MESSAGE_TYPE,
         CONFIGURE_MESSAGE_TYPE, CONFIGURE_RESPONSE_MESSAGE_TYPE,
         HOMING_STATE_MESSAGE_TYPE, HOMING_STATE_RESPONSE_MESSAGE_TYPE,
         GET_STEPS_MESSAGE_TYPE, GET_STEPS_RESPONSE_MESSAGE_TYPE,
         SET_TARGET_STEPS_MESSAGE_TYPE, SET_TARGET_STEPS_RESPONSE_MESSAGE_TYPE,
-        GET_CONFIGURATION_MESSAGE_TYPE, GET_CONFIGURATION_RESPONSE_MESSAGE_TYPE};
+        GET_CONFIGURATION_MESSAGE_TYPE, GET_CONFIGURATION_RESPONSE_MESSAGE_TYPE,
+        SET_CONTROL_CONFIGURATION_MESSAGE_TYPE, SET_CONTROL_CONFIGURATION_RESPONSE_MESSAGE_TYPE,
+        GET_CONTROL_CONFIGURATION_MESSAGE_TYPE, GET_CONTROL_CONFIGURATION_RESPONSE_MESSAGE_TYPE
+        };
 
     class Message {
         private:
@@ -160,6 +167,27 @@ namespace protocol {
             static Message make_get_configuration_response_message(bool dir_high_is_clockwise, char direction_pin, char step_pin, int16_t homing_offset, ActuatorType actuator_type) {
                 const char data[6] = { dir_high_is_clockwise, direction_pin, step_pin, (char)((homing_offset & 0xFF00) >> 8), (char)(homing_offset & 0x00FF), static_cast<int>(actuator_type)};
                 return Message(GET_CONFIGURATION_RESPONSE_MESSAGE_TYPE, data);
+            }
+
+
+            static Message make_set_control_configuration_message(uint16_t error_constant, uint16_t max_microseconds_delay) {
+                const char data[4] = { (char)((error_constant & 0xFF00) >> 8), (char)(error_constant & 0x00FF), (char)((max_microseconds_delay & 0xFF00) >> 8), (char)(max_microseconds_delay & 0x00FF)};
+                return Message(SET_CONTROL_CONFIGURATION_MESSAGE_TYPE, data);
+            }
+
+            static Message make_set_control_configuration_response_message(uint16_t error_constant, uint16_t max_microseconds_delay) {
+                const char data[4] = { (char)((error_constant & 0xFF00) >> 8), (char)(error_constant & 0x00FF), (char)((max_microseconds_delay & 0xFF00) >> 8), (char)(max_microseconds_delay & 0x00FF)};
+                return Message(SET_CONTROL_CONFIGURATION_RESPONSE_MESSAGE_TYPE, data);
+            }
+
+            static Message make_get_control_configuration_message() {
+                const char data[0] = { };
+                return Message(GET_CONTROL_CONFIGURATION_MESSAGE_TYPE, data);
+            }
+
+            static Message make_get_control_configuration_response_message(uint16_t error_constant, uint16_t max_microseconds_delay) {
+                const char data[4] = { (char)((error_constant & 0xFF00) >> 8), (char)(error_constant & 0x00FF), (char)((max_microseconds_delay & 0xFF00) >> 8), (char)(max_microseconds_delay & 0x00FF)};
+                return Message(GET_CONTROL_CONFIGURATION_RESPONSE_MESSAGE_TYPE, data);
             }
 
             static int32_t make_int32_from_four_bytes(uint8_t byte_1, uint8_t byte_2, uint8_t byte_3, uint8_t byte_4) {

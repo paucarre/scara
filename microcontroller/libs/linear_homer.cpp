@@ -11,6 +11,7 @@ bool LinearHomer::bottom_end_stop_is_on() {
 void LinearHomer::loop(RotaryStepper &rotary_stepper){
   if(homing_state == HomingState::HOMING_NOT_STARTED){
     rotary_stepper.enable(true);
+    rotate_clockwise = ! rotate_clockwise;
     rotary_stepper.apply_direction(rotate_clockwise);
     homing_state = HomingState::LINEAR_MOVE_UNITL_BOTTOM_END_STOP;
   }
@@ -35,6 +36,7 @@ void LinearHomer::loop(RotaryStepper &rotary_stepper){
       }
     } else if(homing_state == HomingState::LINEAR_MOVE_TO_HALF){
       if(steps_to_middle <= 0) {
+        rotary_stepper.set_steps(total_steps / 2);
         homing_state = HomingState::HOMING_FINISHED;
       } else {
         steps_to_middle--;

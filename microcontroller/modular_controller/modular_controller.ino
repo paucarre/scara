@@ -13,7 +13,6 @@
 SharedData shared_data;
 SemaphoreHandle_t mutex;
 protocol::Parser parser;
-RotaryController rotary_controller;
 
 template<typename F>
 void do_safely_sharing_data(F &lambda) {
@@ -48,7 +47,18 @@ void control( void * pvParameters ) {
   RotaryStepper rotary_stepper(false, 27, 26, 25, ActuatorType::ROTARY);
   rotary_stepper.setup();
   bool homer_is_initialized = false;
-  uint8_t loops_without_notification = 0;
+  RotaryController rotary_controller;
+  auto init_configuration = [&shared_data, &rotary_stepper, &rotary_controller] () {
+      shared_data.configuration.dir_high_is_clockwise = rotary_stepper.get_dir_high_is_clockwise();
+      shared_data.configuration.direction_pin = rotary_stepper.get_direction_pin();
+      shared_data.configuration.step_pin = rotary_stepper.get_step_pin();
+      shared_data.configuration.actuator_type = rotary_stepper.get_actuator_type();
+      shared_data.actions.do_configure = false;
+      shared_data.control_configuration_data.error_constant = rotary_controller.get_error_constant();
+      shared_data.control_configuration_data.max_microseconds_delay = rotary_controller.get_max_microseconds_delay();
+  };
+  do_safely_sharing_data(init_configuration);  
+      
   for (;;) {    
     TIMERG0.wdt_wprotect=TIMG_WDT_WKEY_VALUE;
     TIMERG0.wdt_feed=1;
@@ -85,7 +95,9 @@ void control( void * pvParameters ) {
     auto update_steps = [&shared_data, &steps] () { shared_data.control.steps = steps; };
     do_safely_sharing_data(update_steps);
     if(controller_data.homing_state == HomingState::HOMING_FINISHED) {
-      rotary_controller.set_target_steps(shared_data.control.target_steps);
+      rotary_controller.set_target_steps(controller_data.control.target_steps);
+      rotary_controller.set_error_constant(controller_data.control_configuration_data.error_constant);
+      rotary_controller.set_max_microseconds_delay(controller_data.control_configuration_data.max_microseconds_delay);
       rotary_controller.control(rotary_stepper);
     }
   }
@@ -160,7 +172,28 @@ void communication( void * pvParameters ) {
           do_safely_sharing_data(configuration);
           protocol::Message message_return = protocol::Message::make_get_configuration_response_message(dir_high_is_clockwise, direction_pin, step_pin, homing_offset, actuator_type);
           write_message(message_return);
+        } else if (message.get_message_type() == protocol::SET_CONTROL_CONFIGURATION_MESSAGE_TYPE) {
+          uint16_t error_constant = protocol::Message::make_int16_from_two_bytes(message.data[0], message.data[1]);
+          uint16_t max_microseconds_delay = protocol::Message::make_int16_from_two_bytes(message.data[2], message.data[3]);
+          auto update_control_config = [&shared_data, &error_constant, &max_microseconds_delay] () { 
+            shared_data.control_configuration_data.error_constant = error_constant; 
+            shared_data.control_configuration_data.max_microseconds_delay = max_microseconds_delay; 
+          };
+          do_safely_sharing_data(update_control_config);
+          protocol::Message message_return = protocol::Message::make_set_control_configuration_response_message(error_constant, max_microseconds_delay);
+          write_message(message_return);
+        } else if (message.get_message_type() == protocol::GET_CONTROL_CONFIGURATION_MESSAGE_TYPE) {
+          uint16_t error_constant = 0;
+          uint16_t max_microseconds_delay = 0;
+          auto get_control_config = [&shared_data, &error_constant, &max_microseconds_delay] () { 
+            error_constant = shared_data.control_configuration_data.error_constant; 
+            max_microseconds_delay = shared_data.control_configuration_data.max_microseconds_delay; 
+          };
+          do_safely_sharing_data(get_control_config);          
+          protocol::Message message_return = protocol::Message::make_get_control_configuration_response_message(error_constant, max_microseconds_delay);
+          write_message(message_return);
         }
+        
       }
     }
   }
