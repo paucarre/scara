@@ -5,6 +5,18 @@ import math
 from returns.result import Failure, ResultE, Success
 from multiprocessing import Process
 
+class ControllerConfiguration():
+
+    def __init__(self, error_constant, max_microseconds_delay):
+        self.error_constant = error_constant
+        self.max_microseconds_delay = max_microseconds_delay
+
+    def __repr__(self):
+        return str(self)
+
+    def __str__(self):
+        return str(self.__dict__)
+
 class JointDevice():
 
     def __init__(self, actuator_type, serial_name, dir_high_is_clockwise, dir_pin, step_pin, homing_offset, baud_rate=9600):
@@ -56,6 +68,30 @@ class JointDevice():
             self._try_to_get_response(protocol.CONFIGURE_RESPONSE_MESSAGE_TYPE))
         configure_message_result = configure_message_result.map(lambda message: \
             message.get_data()).value_or(None)
+        return configure_message_result
+
+    def configure_controller(self, error_constant, max_microseconds_delay):
+        configure_message = protocol.Message.make_set_control_configuration_message(error_constant, max_microseconds_delay)
+        configure_message_result = self._try_to_send_message(configure_message)
+        configure_message_result = configure_message_result.bind(lambda message: \
+            self._try_to_get_response(protocol.SET_CONTROL_CONFIGURATION_RESPONSE_MESSAGE_TYPE))
+        configure_message_result = configure_message_result.map(lambda message: \
+            ControllerConfiguration ( \
+                protocol.Message.make_uint16_from_two_bytes(message.get_data()[0], message.get_data()[1]),
+                protocol.Message.make_uint16_from_two_bytes(message.get_data()[2], message.get_data()[3]),
+            )).value_or(None)
+        return configure_message_result
+
+    def get_controller_configuration(self):
+        configure_message = protocol.Message.make_get_control_configuration_message()
+        configure_message_result = self._try_to_send_message(configure_message)
+        configure_message_result = configure_message_result.bind(lambda message: \
+            self._try_to_get_response(protocol.GET_CONTROL_CONFIGURATION_RESPONSE_MESSAGE_TYPE))
+        configure_message_result = configure_message_result.map(lambda message: \
+            ControllerConfiguration ( \
+                protocol.Message.make_uint16_from_two_bytes(message.get_data()[0], message.get_data()[1]),
+                protocol.Message.make_uint16_from_two_bytes(message.get_data()[2], message.get_data()[3]),
+            )).value_or(None)
         return configure_message_result
 
     def get_configuration(self):
@@ -152,3 +188,16 @@ class JointDevice():
         while steps is None or steps != target_steps:
             steps = self.get_steps()
             print(steps)
+
+
+
+if __name__ == '__main__':
+    linear_joint_0_device = JointDevice(protocol.ActuatorType.LINEAR, '/dev/ttyS5', True, 27, 26, 0)
+    linear_joint_0_device.open()
+    result = linear_joint_0_device.get_controller_configuration()
+    print('configuration', result)
+    result = linear_joint_0_device.configure_controller(10, 1000)
+    print('configuration', result)
+    result = linear_joint_0_device.get_controller_configuration()
+    print('configuration', result)
+    linear_joint_0_device.close()

@@ -200,6 +200,11 @@ namespace protocol {
                 return data;
             }
 
+            static uint16_t make_uint16_from_two_bytes(uint8_t byte_1, uint8_t byte_2) {
+                const uint16_t data  = ((byte_1 << 8) & 0xFF00) + (byte_2 & 0x00FF);
+                return data;
+            }
+
 
     };
 

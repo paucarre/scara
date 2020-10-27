@@ -33,10 +33,20 @@ class ScaraRobot():
         print(f'Joint {id} configured')
 
     def home(self):
+        configure_controller_processes = [Process(target=ScaraRobot.configure_controller_joint, args=(id, joint, 5000, 500,)) for id, joint in enumerate(self.joints)]
+        [configure_controller_process.start() for configure_controller_process in configure_controller_processes]
+        [configure_controller_process.join() for configure_controller_process in configure_controller_processes]
+
         linear_home_process = Process(target=ScaraRobot.home_joint, args=(0, self.linear_joint_0_device,))
         linear_home_process.start()
         [ScaraRobot.home_joint(id + 1, angular_joint) for id, angular_joint in enumerate(self.angular_joints)]
         linear_home_process.join()
+
+    @staticmethod
+    def configure_controller_joint(id, joint, error_constant, max_microseconds_delay):
+        print(f'Configuring controller joint {id}')
+        joint.configure_controller(error_constant, max_microseconds_delay)
+        print(f'Joint {id} contorller configured')
 
     @staticmethod
     def home_joint(id, joint):
@@ -92,9 +102,12 @@ if __name__ == '__main__':
     scara_robot.open()
     scara_robot.configure()
     scara_robot.home()
-    target_steps = [30000, 10000, -10134, -10000]
+    scara_robot.angular_joint_1_device.configure_controller(5000, 5000)
+    scara_robot.angular_joint_2_device.configure_controller(5000, 5000)
+    scara_robot.angular_joint_3_device.configure_controller(5000, 5000)
+    target_steps = [30000, 1000, -1134, -1000]
     mult = 1
-    for i in range(0, 10):
+    for i in range(0, 30):
         move_proceses = scara_robot.move(target_steps)
         scara_robot.wait_until_target_reached(target_steps)
         mult = mult * -1

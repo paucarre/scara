@@ -57,12 +57,12 @@ void control( void * pvParameters ) {
       shared_data.control_configuration_data.error_constant = rotary_controller.get_error_constant();
       shared_data.control_configuration_data.max_microseconds_delay = rotary_controller.get_max_microseconds_delay();
   };
-  do_safely_sharing_data(init_configuration);  
-      
-  for (;;) {    
+  do_safely_sharing_data(init_configuration);
+
+  for (;;) {
     TIMERG0.wdt_wprotect=TIMG_WDT_WKEY_VALUE;
     TIMERG0.wdt_feed=1;
-    TIMERG0.wdt_wprotect=0;    
+    TIMERG0.wdt_wprotect=0;
     auto pull_protocol_configuration = [&] () { controller_data = shared_data; };
     do_safely_sharing_data(pull_protocol_configuration);
     if (controller_data.actions.do_homing) {
@@ -173,11 +173,11 @@ void communication( void * pvParameters ) {
           protocol::Message message_return = protocol::Message::make_get_configuration_response_message(dir_high_is_clockwise, direction_pin, step_pin, homing_offset, actuator_type);
           write_message(message_return);
         } else if (message.get_message_type() == protocol::SET_CONTROL_CONFIGURATION_MESSAGE_TYPE) {
-          uint16_t error_constant = protocol::Message::make_int16_from_two_bytes(message.data[0], message.data[1]);
-          uint16_t max_microseconds_delay = protocol::Message::make_int16_from_two_bytes(message.data[2], message.data[3]);
-          auto update_control_config = [&shared_data, &error_constant, &max_microseconds_delay] () { 
-            shared_data.control_configuration_data.error_constant = error_constant; 
-            shared_data.control_configuration_data.max_microseconds_delay = max_microseconds_delay; 
+          uint16_t error_constant = protocol::Message::make_uint16_from_two_bytes(message.data[0], message.data[1]);
+          uint16_t max_microseconds_delay = protocol::Message::make_uint16_from_two_bytes(message.data[2], message.data[3]);
+          auto update_control_config = [&shared_data, &error_constant, &max_microseconds_delay] () {
+            shared_data.control_configuration_data.error_constant = error_constant;
+            shared_data.control_configuration_data.max_microseconds_delay = max_microseconds_delay;
           };
           do_safely_sharing_data(update_control_config);
           protocol::Message message_return = protocol::Message::make_set_control_configuration_response_message(error_constant, max_microseconds_delay);
@@ -185,15 +185,15 @@ void communication( void * pvParameters ) {
         } else if (message.get_message_type() == protocol::GET_CONTROL_CONFIGURATION_MESSAGE_TYPE) {
           uint16_t error_constant = 0;
           uint16_t max_microseconds_delay = 0;
-          auto get_control_config = [&shared_data, &error_constant, &max_microseconds_delay] () { 
-            error_constant = shared_data.control_configuration_data.error_constant; 
-            max_microseconds_delay = shared_data.control_configuration_data.max_microseconds_delay; 
+          auto get_control_config = [&shared_data, &error_constant, &max_microseconds_delay] () {
+            error_constant = shared_data.control_configuration_data.error_constant;
+            max_microseconds_delay = shared_data.control_configuration_data.max_microseconds_delay;
           };
-          do_safely_sharing_data(get_control_config);          
+          do_safely_sharing_data(get_control_config);
           protocol::Message message_return = protocol::Message::make_get_control_configuration_response_message(error_constant, max_microseconds_delay);
           write_message(message_return);
         }
-        
+
       }
     }
   }
