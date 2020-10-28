@@ -47,6 +47,7 @@ void LinearHomer::loop(RotaryStepper &rotary_stepper){
 }
 
 void LinearHomer::setup(RotaryStepper &rotary_stepper) {
+  homing_state = HomingState::HOMING_NOT_STARTED;
   pinMode(top_end_stop_pin, INPUT);
   pinMode(bottom_end_stop_pin, INPUT);
 }

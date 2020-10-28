@@ -75,6 +75,7 @@ void RotaryHomer::loop(RotaryStepper &rotary_stepper){
 }
 
 void RotaryHomer::setup(RotaryStepper &rotary_stepper) {
+  homing_state = HomingState::HOMING_NOT_STARTED;
   pinMode(center_magnetic_sensor_pin, INPUT);
   pinMode(left_magnetic_end_stop_pin  , INPUT);
   pinMode(right_magnetic_end_stop_pin , INPUT);

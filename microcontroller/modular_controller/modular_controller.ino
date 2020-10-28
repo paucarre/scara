@@ -65,6 +65,8 @@ void control( void * pvParameters ) {
     TIMERG0.wdt_wprotect=0;
     auto pull_protocol_configuration = [&] () { controller_data = shared_data; };
     do_safely_sharing_data(pull_protocol_configuration);
+    rotary_controller.set_error_constant(controller_data.control_configuration_data.error_constant);
+    rotary_controller.set_max_microseconds_delay(controller_data.control_configuration_data.max_microseconds_delay);
     if (controller_data.actions.do_homing) {
       if(!homer_is_initialized){
         homer = &HomerBuilder::build_homer(rotary_stepper.get_actuator_type());
@@ -96,8 +98,6 @@ void control( void * pvParameters ) {
     do_safely_sharing_data(update_steps);
     if(controller_data.homing_state == HomingState::HOMING_FINISHED) {
       rotary_controller.set_target_steps(controller_data.control.target_steps);
-      rotary_controller.set_error_constant(controller_data.control_configuration_data.error_constant);
-      rotary_controller.set_max_microseconds_delay(controller_data.control_configuration_data.max_microseconds_delay);
       rotary_controller.control(rotary_stepper);
     }
   }
