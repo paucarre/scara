@@ -4,6 +4,20 @@ import time
 import math
 from returns.result import Failure, ResultE, Success
 from multiprocessing import Process
+import logging
+
+class ControllerMinmaxConfiguration():
+
+    def __init__(self, minimum_steps, maximum_steps):
+        self.minimum_steps = minimum_steps
+        self.maximum_steps = maximum_steps
+
+    def __repr__(self):
+        return str(self)
+
+    def __str__(self):
+        return str(self.__dict__)
+
 
 class ControllerConfiguration():
 
@@ -19,7 +33,8 @@ class ControllerConfiguration():
 
 class JointDevice():
 
-    def __init__(self, actuator_type, serial_name, dir_high_is_clockwise, dir_pin, step_pin, homing_offset, baud_rate=9600):
+    def __init__(self, label, actuator_type, serial_name, dir_high_is_clockwise, dir_pin, step_pin, homing_offset, baud_rate=9600):
+        self.label = label
         self.parser = protocol.Parser()
         self.actuator_type = actuator_type
         self.serial_name = serial_name
@@ -28,16 +43,27 @@ class JointDevice():
         self.step_pin = step_pin
         self.dir_pin = dir_pin
         self.homing_offset = homing_offset
+        self.logger = logging.getLogger(f'{label} Axis')
+        self.logger.setLevel(logging.DEBUG)
+        stream_handler = logging.StreamHandler()
+        stream_handler.setLevel(logging.DEBUG)
+        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        stream_handler.setFormatter(formatter)
+        self.logger.addHandler(stream_handler)
+
 
     def _try_to_get_response(self, expected_response_type, MAX_ATTEMTS=20):
         current_attempt = 0
+        received_bytes = []
         while current_attempt < MAX_ATTEMTS:
             if self.serial_handler.in_waiting > 0:
                 received_byte = self.serial_handler.read()
-                print(received_byte)
+                received_bytes.append(received_byte)
                 parsing_result = self.parser.parse_byte(received_byte)
                 #print(parsing_result.get_state())
                 if parsing_result.is_parsed():
+                    data_string = ' | '.join([data.hex() for data in received_bytes])
+                    self.logger.debug(f'Received bytes: {data_string}')
                     message = parsing_result.get_message()
                     if(message.get_message_type() == expected_response_type):
                         #print(message.get_bytes())
@@ -69,6 +95,22 @@ class JointDevice():
         configure_message_result = configure_message_result.map(lambda message: \
             message.get_data()).value_or(None)
         return configure_message_result
+
+
+    def configure_min_max_steps(self, minimum_steps, maximum_steps):
+        #"make_get_control_minmax_configuration_message", &protocol::Message::make_get_control_minmax_configuration_message)
+        #.def_static("make_set_control_minmax_configuration_message"
+        configure_message = protocol.Message.make_set_control_minmax_configuration_message(minimum_steps, maximum_steps)
+        configure_message_result = self._try_to_send_message(configure_message)
+        configure_message_result = configure_message_result.bind(lambda message: \
+            self._try_to_get_response(protocol.SET_CONTROL_MINMAX_CONFIGURATION_RESPONSE_MESSAGE_TYPE))
+        configure_message_result = configure_message_result.map(lambda message: \
+            ControllerConfiguration ( \
+                protocol.Message.make_int32_from_four_bytes(message.get_data()[0], message.get_data()[1], message.get_data()[2], message.get_data()[3]),
+                protocol.Message.make_int32_from_four_bytes(message.get_data()[4], message.get_data()[5], message.get_data()[6], message.get_data()[7]),
+            )).value_or(None)
+        return configure_message_result
+
 
     def configure_controller(self, error_constant, max_microseconds_delay):
         configure_message = protocol.Message.make_set_control_configuration_message(error_constant, max_microseconds_delay)
@@ -105,6 +147,7 @@ class JointDevice():
         return result
 
     def home(self):
+        self.configure_controller(5000, 500)
         home_message = protocol.Message.make_homing_message()
         home_result = self._try_to_send_message(home_message)
         home_result = home_result.bind(lambda message: \
@@ -124,12 +167,19 @@ class JointDevice():
 
     def set_target_steps(self, steps):
         message = protocol.Message.make_set_target_steps_message(steps)
-        #print(message.get_message_bytes())
         result = self._try_to_send_message(message)
-        #print(result)
         result = result.bind(lambda message: \
             self._try_to_get_response(protocol.SET_TARGET_STEPS_RESPONSE_MESSAGE_TYPE))
         result = result.map(lambda message: message.get_data()).value_or(None)
+        return result
+
+    def get_target_steps(self):
+        message = protocol.Message.make_get_target_steps_message()
+        result = self._try_to_send_message(message)
+        result = result.bind(lambda message: \
+            self._try_to_get_response(protocol.GET_TARGET_STEPS_RESPONSE_MESSAGE_TYPE))
+        result = result.map(lambda message: \
+            protocol.Message.make_int32_from_four_bytes(message.get_data()[0], message.get_data()[1], message.get_data()[2], message.get_data()[3])).value_or(None)
         return result
 
     def get_steps(self):
@@ -161,7 +211,7 @@ class JointDevice():
         result = protocol.HomingState.HOMING_NOT_STARTED
         while result != protocol.HomingState.HOMING_FINISHED:
             result = self.get_home_state()
-            print(result)
+            self.logger.debug(f'Homing Sate: {result}')
 
     def configure_until_finished(self):
         is_finished = lambda result: ( (result[0] == 1 and self.dir_high_is_clockwise) or (result[0] == 0 and not self.dir_high_is_clockwise) ) and \
@@ -169,11 +219,11 @@ class JointDevice():
             (result[2] == self.step_pin) and \
             (protocol.Message.make_int16_from_two_bytes(result[3], result[4]) == self.homing_offset) and \
             (protocol.ActuatorType.from_index(result[5]) == self.actuator_type)
-        print(self.actuator_type)
+        #print(self.actuator_type)
         result = self.configure()
-        print(result)
+        #print(result)
         result = self.configure()
-        print(result)
+        #print(result)
         while not is_finished(result):
             time.sleep(0.1)
             result = self.get_configuration()
@@ -186,18 +236,17 @@ class JointDevice():
         steps = self.get_steps()
         #print(steps)
         while steps is None or steps != target_steps:
+            #print('target steps: ', self.get_target_steps())
             steps = self.get_steps()
-            print(steps)
-
 
 
 if __name__ == '__main__':
-    linear_joint_0_device = JointDevice(protocol.ActuatorType.LINEAR, '/dev/ttyS5', True, 27, 26, 0)
+    linear_joint_0_device = JointDevice('Linear 0', protocol.ActuatorType.LINEAR, '/dev/ttyS5', True, 27, 26, 0)
     linear_joint_0_device.open()
-    result = linear_joint_0_device.get_controller_configuration()
-    print('configuration', result)
-    result = linear_joint_0_device.configure_controller(10, 1000)
-    print('configuration', result)
-    result = linear_joint_0_device.get_controller_configuration()
-    print('configuration', result)
+    linear_joint_0_device.configure()
+    linear_joint_0_device.home_until_finished()
+    #linear_joint_0_device.configure_min_max_steps(5000, 6000)
+    #linear_joint_0_device.move_to_target_until_is_reached(50000)
+    linear_joint_0_device.move_to_target_until_is_reached(33000)
+    #linear_joint_0_device.move_to_target_until_is_reached(1000)
     linear_joint_0_device.close()

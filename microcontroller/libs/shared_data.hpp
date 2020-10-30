@@ -23,6 +23,8 @@ struct ControlData {
 struct ControlConfigurationData {
   uint16_t error_constant = 0;
   uint16_t max_microseconds_delay = 0;
+  int32_t minimum_steps = 0;
+  int32_t maximum_steps = 0;
 };
 
 struct SharedData {

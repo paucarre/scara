@@ -64,16 +64,23 @@ namespace protocol {
     static MessageType GET_STEPS_MESSAGE_TYPE = MessageType(0x07, 0);
     static MessageType GET_STEPS_RESPONSE_MESSAGE_TYPE = MessageType(0x08, 4);
     static MessageType SET_TARGET_STEPS_MESSAGE_TYPE = MessageType(0x09, 4);
-    static MessageType SET_TARGET_STEPS_RESPONSE_MESSAGE_TYPE = MessageType(0x0A, 0);
+    static MessageType SET_TARGET_STEPS_RESPONSE_MESSAGE_TYPE = MessageType(0x0A, 4);
     static MessageType GET_CONFIGURATION_MESSAGE_TYPE = MessageType(0x0B, 0);
     static MessageType GET_CONFIGURATION_RESPONSE_MESSAGE_TYPE = MessageType(0x0C, 6);
     static MessageType SET_CONTROL_CONFIGURATION_MESSAGE_TYPE = MessageType(0x0D, 4);
     static MessageType SET_CONTROL_CONFIGURATION_RESPONSE_MESSAGE_TYPE = MessageType(0x0E, 4);
     static MessageType GET_CONTROL_CONFIGURATION_MESSAGE_TYPE = MessageType(0x0F, 0);
     static MessageType GET_CONTROL_CONFIGURATION_RESPONSE_MESSAGE_TYPE = MessageType(0x10, 4);
+    static MessageType SET_CONTROL_MINMAX_CONFIGURATION_MESSAGE_TYPE = MessageType(0x11, 8);
+    static MessageType SET_CONTROL_MINMAX_CONFIGURATION_RESPONSE_MESSAGE_TYPE = MessageType(0x12, 8);
+    static MessageType GET_CONTROL_MINMAX_CONFIGURATION_MESSAGE_TYPE = MessageType(0x13, 0);
+    static MessageType GET_CONTROL_MINMAX_CONFIGURATION_RESPONSE_MESSAGE_TYPE = MessageType(0x14, 8);
+    static MessageType GET_TARGET_STEPS_MESSAGE_TYPE = MessageType(0x15, 0);
+    static MessageType GET_TARGET_STEPS_RESPONSE_MESSAGE_TYPE = MessageType(0x16, 4);
+
 
     static MessageType UNDEFINED_MESSAGE_TYPE = MessageType(0xCC, 0);
-    static const uint8_t NUMBER_OF_MESSAGES = 16;
+    static const uint8_t NUMBER_OF_MESSAGES = 22;
     static MessageType MESSAGES[NUMBER_OF_MESSAGES] = {
         HOME_MESSAGE_TYPE, HOME_RESPONSE_MESSAGE_TYPE,
         CONFIGURE_MESSAGE_TYPE, CONFIGURE_RESPONSE_MESSAGE_TYPE,
@@ -82,7 +89,10 @@ namespace protocol {
         SET_TARGET_STEPS_MESSAGE_TYPE, SET_TARGET_STEPS_RESPONSE_MESSAGE_TYPE,
         GET_CONFIGURATION_MESSAGE_TYPE, GET_CONFIGURATION_RESPONSE_MESSAGE_TYPE,
         SET_CONTROL_CONFIGURATION_MESSAGE_TYPE, SET_CONTROL_CONFIGURATION_RESPONSE_MESSAGE_TYPE,
-        GET_CONTROL_CONFIGURATION_MESSAGE_TYPE, GET_CONTROL_CONFIGURATION_RESPONSE_MESSAGE_TYPE
+        GET_CONTROL_CONFIGURATION_MESSAGE_TYPE, GET_CONTROL_CONFIGURATION_RESPONSE_MESSAGE_TYPE,
+        SET_CONTROL_MINMAX_CONFIGURATION_MESSAGE_TYPE, SET_CONTROL_MINMAX_CONFIGURATION_RESPONSE_MESSAGE_TYPE,
+        GET_CONTROL_MINMAX_CONFIGURATION_MESSAGE_TYPE, GET_CONTROL_MINMAX_CONFIGURATION_RESPONSE_MESSAGE_TYPE,
+        GET_TARGET_STEPS_MESSAGE_TYPE, GET_TARGET_STEPS_RESPONSE_MESSAGE_TYPE
         };
 
     class Message {
@@ -144,20 +154,40 @@ namespace protocol {
                 return Message(GET_STEPS_MESSAGE_TYPE, data);
             }
 
+            static void fill_data_from_uint16(int32_t value, char* data){
+                data[0] = (char)((value & 0x0000FF00) >> 8);
+                data[1] = (char)(value & 0x000000FF);
+            }
+
             static Message make_get_steps_response_message(int32_t steps) {
-                const char data[4] = { (char) ((steps & 0xFF000000) >> 24), (char)((steps & 0x00FF0000) >> 16), (char)((steps & 0x0000FF00) >> 8), (char)(steps & 0x000000FF) };
+                char data[4] = { 0 };
+                fill_data_from_int32(steps, data);
                 return Message(GET_STEPS_RESPONSE_MESSAGE_TYPE, data);
             }
 
             static Message make_set_target_steps_message(int32_t steps) {
-                const char data[4] = { (char) ((steps & 0xFF000000) >> 24), (char)((steps & 0x00FF0000) >> 16), (char)((steps & 0x0000FF00) >> 8), (char)(steps & 0x000000FF) };
+                char data[4] = { 0 };
+                fill_data_from_int32(steps, data);
                 return Message(SET_TARGET_STEPS_MESSAGE_TYPE, data);
             }
 
-            static Message make_set_target_steps_response_message() {
-                const char data[0] = { };
+            static Message make_set_target_steps_response_message(int32_t target_steps) {
+                char data[4] = { 0 };
+                fill_data_from_int32(target_steps, data);
                 return Message(SET_TARGET_STEPS_RESPONSE_MESSAGE_TYPE, data);
             }
+
+            static Message make_get_target_steps_message() {
+                const char data[0] = { };
+                return Message(GET_TARGET_STEPS_MESSAGE_TYPE, data);
+            }
+
+            static Message make_get_target_steps_response_message(int32_t target_steps) {
+                char data[4] = { 0 };
+                fill_data_from_int32(target_steps, data);
+                return Message(GET_TARGET_STEPS_RESPONSE_MESSAGE_TYPE, data);
+            }
+
 
             static Message make_get_configuration_message() {
                 const char data[0] = { };
@@ -171,12 +201,16 @@ namespace protocol {
 
 
             static Message make_set_control_configuration_message(uint16_t error_constant, uint16_t max_microseconds_delay) {
-                const char data[4] = { (char)((error_constant & 0xFF00) >> 8), (char)(error_constant & 0x00FF), (char)((max_microseconds_delay & 0xFF00) >> 8), (char)(max_microseconds_delay & 0x00FF)};
+                char data[4] = { 0 } ;
+                fill_data_from_uint16(error_constant, data);
+                fill_data_from_uint16(max_microseconds_delay, data + 2);
                 return Message(SET_CONTROL_CONFIGURATION_MESSAGE_TYPE, data);
             }
 
             static Message make_set_control_configuration_response_message(uint16_t error_constant, uint16_t max_microseconds_delay) {
-                const char data[4] = { (char)((error_constant & 0xFF00) >> 8), (char)(error_constant & 0x00FF), (char)((max_microseconds_delay & 0xFF00) >> 8), (char)(max_microseconds_delay & 0x00FF)};
+                char data[4] = { 0 } ;
+                fill_data_from_uint16(error_constant, data);
+                fill_data_from_uint16(max_microseconds_delay, data + 2);
                 return Message(SET_CONTROL_CONFIGURATION_RESPONSE_MESSAGE_TYPE, data);
             }
 
@@ -186,8 +220,43 @@ namespace protocol {
             }
 
             static Message make_get_control_configuration_response_message(uint16_t error_constant, uint16_t max_microseconds_delay) {
-                const char data[4] = { (char)((error_constant & 0xFF00) >> 8), (char)(error_constant & 0x00FF), (char)((max_microseconds_delay & 0xFF00) >> 8), (char)(max_microseconds_delay & 0x00FF)};
+                char data[4] = { 0 } ;
+                fill_data_from_uint16(error_constant, data);
+                fill_data_from_uint16(max_microseconds_delay, data + 2);
                 return Message(GET_CONTROL_CONFIGURATION_RESPONSE_MESSAGE_TYPE, data);
+            }
+
+            static Message make_set_control_minmax_configuration_message(int32_t minimum_steps, int32_t maximum_steps) {
+                char data[8] = { 0 };
+                fill_data_from_int32(minimum_steps, data);
+                fill_data_from_int32(maximum_steps, data + 4);
+                return Message(SET_CONTROL_MINMAX_CONFIGURATION_MESSAGE_TYPE, data);
+            }
+
+            static Message make_set_control_minmax_configuration_response_message(int32_t minimum_steps, int32_t maximum_steps) {
+                char data[8] = { 0 };
+                fill_data_from_int32(minimum_steps, data);
+                fill_data_from_int32(maximum_steps, data + 4);
+                return Message(SET_CONTROL_MINMAX_CONFIGURATION_RESPONSE_MESSAGE_TYPE, data);
+            }
+
+            static Message make_get_control_minmax_configuration_message() {
+                const char data[0] = { };
+                return Message(GET_CONTROL_MINMAX_CONFIGURATION_MESSAGE_TYPE, data);
+            }
+
+            static Message make_get_control_minmax_configuration_response_message(int32_t minimum_steps, int32_t maximum_steps) {
+                char data[8] = { 0 };
+                fill_data_from_int32(minimum_steps, data);
+                fill_data_from_int32(maximum_steps, data + 4);
+                return Message(GET_CONTROL_MINMAX_CONFIGURATION_RESPONSE_MESSAGE_TYPE, data);
+            }
+
+            static void fill_data_from_int32(int32_t value, char* data){
+                    data[0] = (char)(0x000000FF & ((value & 0xFF000000) >> 24));
+                    data[1] = (char)(0x000000FF & ((value & 0x00FF0000) >> 16));
+                    data[2] = (char)(0x000000FF & ((value & 0x0000FF00) >>  8));
+                    data[3] = (char)(value & 0x000000FF);
             }
 
             static int32_t make_int32_from_four_bytes(uint8_t byte_1, uint8_t byte_2, uint8_t byte_3, uint8_t byte_4) {

@@ -96,7 +96,10 @@ void init_protocol(py::module &m) {
           .def_static("make_get_configuration_message", &protocol::Message::make_get_configuration_message)
           .def_static("make_homing_state_response_message", &protocol::Message::make_homing_state_response_message)
           .def_static("make_get_control_configuration_message", &protocol::Message::make_get_control_configuration_message)
-          .def_static("make_set_control_configuration_message", &protocol::Message::make_set_control_configuration_message);
+          .def_static("make_set_control_configuration_message", &protocol::Message::make_set_control_configuration_message)
+          .def_static("make_get_control_minmax_configuration_message", &protocol::Message::make_get_control_minmax_configuration_message)
+          .def_static("make_set_control_minmax_configuration_message", &protocol::Message::make_set_control_minmax_configuration_message)
+          .def_static("make_get_target_steps_message", &protocol::Message::make_get_target_steps_message);
 
      py::class_<protocol::Parser>(m, "Parser")
           .def(py::init<>())
@@ -128,5 +131,11 @@ void init_protocol(py::module &m) {
      m.attr("SET_CONTROL_CONFIGURATION_RESPONSE_MESSAGE_TYPE") = py::cast(protocol::SET_CONTROL_CONFIGURATION_RESPONSE_MESSAGE_TYPE);
      m.attr("GET_CONTROL_CONFIGURATION_MESSAGE_TYPE") = py::cast(protocol::GET_CONTROL_CONFIGURATION_MESSAGE_TYPE);
      m.attr("GET_CONTROL_CONFIGURATION_RESPONSE_MESSAGE_TYPE") = py::cast(protocol::GET_CONTROL_CONFIGURATION_RESPONSE_MESSAGE_TYPE);
+     m.attr("SET_CONTROL_MINMAX_CONFIGURATION_MESSAGE_TYPE") = py::cast(protocol::SET_CONTROL_MINMAX_CONFIGURATION_MESSAGE_TYPE);
+     m.attr("SET_CONTROL_MINMAX_CONFIGURATION_RESPONSE_MESSAGE_TYPE") = py::cast(protocol::SET_CONTROL_MINMAX_CONFIGURATION_RESPONSE_MESSAGE_TYPE);
+     m.attr("GET_CONTROL_MINMAX_CONFIGURATION_MESSAGE_TYPE") = py::cast(protocol::GET_CONTROL_MINMAX_CONFIGURATION_MESSAGE_TYPE);
+     m.attr("GET_CONTROL_MINMAX_CONFIGURATION_RESPONSE_MESSAGE_TYPE") = py::cast(protocol::GET_CONTROL_MINMAX_CONFIGURATION_RESPONSE_MESSAGE_TYPE);
+     m.attr("GET_TARGET_STEPS_MESSAGE_TYPE") = py::cast(protocol::GET_TARGET_STEPS_MESSAGE_TYPE);
+     m.attr("GET_TARGET_STEPS_RESPONSE_MESSAGE_TYPE") = py::cast(protocol::GET_TARGET_STEPS_RESPONSE_MESSAGE_TYPE);
 
 }
