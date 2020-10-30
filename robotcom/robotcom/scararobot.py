@@ -31,59 +31,59 @@ class ScaraRobot():
         [joint.open() for joint in self.joints]
 
     def configure(self):
-        configuration_processes = [Process(target=ScaraRobot.configure_joint, args=(id, joint, self.logger, )) for id, joint in enumerate(self.joints)]
+        configuration_processes = [Process(target=ScaraRobot.configure_joint, args=(joint, self.logger, )) for id, joint in enumerate(self.joints)]
         [configure_process.start() for configure_process in configuration_processes]
         [configure_process.join() for configure_process in configuration_processes]
 
     @staticmethod
-    def configure_joint(id, joint, logger):
-        logger.debug(f'Configuring joint {id}')
+    def configure_joint(joint, logger):
+        logger.debug(f'Configuring joint {joint.label}')
         joint.configure_until_finished()
-        logger.debug(f'Joint {id} configured')
+        logger.debug(f'Joint {joint.label} configured')
 
     def home(self):
-        configure_controller_processes = [Process(target=ScaraRobot.configure_controller_joint, args=(id, joint, 5000, 500, self.logger, )) for id, joint in enumerate(self.joints)]
+        configure_controller_processes = [Process(target=ScaraRobot.configure_controller_joint, args=(joint, 5000, 500, self.logger, )) for id, joint in enumerate(self.joints)]
         [configure_controller_process.start() for configure_controller_process in configure_controller_processes]
         [configure_controller_process.join() for configure_controller_process in configure_controller_processes]
 
-        linear_home_process = Process(target=ScaraRobot.home_joint, args=(0, self.linear_joint_0_device, self.logger, ))
+        linear_home_process = Process(target=ScaraRobot.home_joint, args=(self.linear_joint_0_device, self.logger, ))
         linear_home_process.start()
-        [ScaraRobot.home_joint(id + 1, angular_joint, self.logger) for id, angular_joint in enumerate(self.angular_joints)]
+        [ScaraRobot.home_joint(angular_joint, self.logger) for id, angular_joint in enumerate(self.angular_joints)]
         linear_home_process.join()
 
     @staticmethod
-    def configure_controller_joint(id, joint, error_constant, max_microseconds_delay, logger):
-        logger.debug(f'Configuring controller joint {id}')
+    def configure_controller_joint(joint, error_constant, max_microseconds_delay, logger):
+        logger.debug(f'Configuring controller joint {joint.label}')
         joint.configure_controller(error_constant, max_microseconds_delay)
-        logger.debug(f'Joint {id} contorller configured')
+        logger.debug(f'Joint {joint.label} contorller configured')
 
     @staticmethod
-    def home_joint(id, joint, logger):
-        logger.debug(f'Homing joint {id}')
+    def home_joint(joint, logger):
+        logger.debug(f'Homing joint {joint.label}')
         joint.home_until_finished()
-        logger.debug(f'Joint {id} homed')
+        logger.debug(f'Joint {joint.label} homed')
 
     def move(self, target_steps_per_axis):
-        move_processes = [Process(target=ScaraRobot.move_joint, args=(id, joint, target_steps_per_axis[id], self.logger)) for id, joint in enumerate(self.joints)]
+        move_processes = [Process(target=ScaraRobot.move_joint, args=(joint, target_steps_per_axis[id], self.logger)) for id, joint in enumerate(self.joints)]
         [move_process.start() for move_process in move_processes]
         [move_process.join() for move_process in move_processes]
 
     @staticmethod
-    def move_joint(id, joint, target_steps, logger):
-        logger.debug(f'Moving joint {id} to {target_steps}')
+    def move_joint(joint, target_steps, logger):
+        logger.debug(f'Moving joint {joint.label} to {target_steps}')
         result = joint.set_target_steps(target_steps)
-        logger.debug(f'Joint {id} moved to {result}')
+        logger.debug(f'Joint {joint.label} moved to {result}')
 
     def close(self):
-        close_processes = [Process(target=ScaraRobot.close_joint, args=(id, joint, self.logger, )) for id, joint in enumerate(self.joints)]
+        close_processes = [Process(target=ScaraRobot.close_joint, args=(joint, self.logger, )) for id, joint in enumerate(self.joints)]
         [close_process.start() for close_process in close_processes]
         [close_process.join() for close_process in close_processes]
 
     @staticmethod
-    def close_joint(id, joint, logger):
-        logger.debug(f'Closing joint {id}')
+    def close_joint(joint, logger):
+        logger.debug(f'Closing joint {joint.label}')
         joint.close()
-        logger.debug(f'Joint {id} closed')
+        logger.debug(f'Joint {joint.label} closed')
 
     def wait_until_target_reached(self, target_steps):
         joint_to_current_steps = self.get_steps()
@@ -101,9 +101,9 @@ class ScaraRobot():
 
     @staticmethod
     def get_steps_joint(id, joint, joint_to_current_steps, logger):
-        logger.debug(f'Getting steps joint {id}')
+        logger.debug(f'Getting steps joint {joint.label}')
         joint_to_current_steps[id] = joint.get_steps()
-        logger.debug(f'Joint {id} got steps {joint_to_current_steps[id]}')
+        logger.debug(f'Joint {joint.label} got steps {joint_to_current_steps[id]}')
 
 if __name__ == '__main__':
     scara_robot = ScaraRobot()

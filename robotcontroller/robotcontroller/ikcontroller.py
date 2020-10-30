@@ -11,11 +11,15 @@ class IkController():
         self.ik_solver = IkSolver(robot_topology)
         self.driver_steps = 25000
         self.gear_ratio = 20 / 58
+        self.linear_ratio = 100 / 20000
 
     def angle_to_steps(self, angle):
         if angle > math.pi:
             angle = angle - (2 * math.pi)
         return int(self.driver_steps * angle / ((2 * math.pi) * self.gear_ratio ))
+
+    def distance_to_steps(self, distance):
+        return int(distance / self.linear_ratio)
 
     def get_angles(self, x, y, z, dx, dy):
         ik_solutions = self.ik_solver.compute_ik(dx=dx, dy=dy, x=x, y=y)
@@ -48,7 +52,8 @@ if __name__ == '__main__':
                 print(ik_solution)
                 steps_solution = ik_controller.get_steps(ik_solution)
                 print(steps_solution)
-                target_steps = [1000] + steps_solution
+                linear_steps = (ik_controller.distance_to_steps(sample) * 5) + ik_controller.distance_to_steps(50)
+                target_steps = [linear_steps] + steps_solution
                 move_proceses = scara_robot.move(target_steps)
                 #scara_robot.wait_until_target_reached(target_steps)
             else:
