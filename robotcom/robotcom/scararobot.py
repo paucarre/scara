@@ -14,7 +14,7 @@ class ScaraRobot():
         self.linear_joint_0_device = JointDevice('Linear 0', protocol.ActuatorType.LINEAR, '/dev/ttyS5', True, 27, 26, 0, 1000, 51000)
         self.angular_joint_1_device = JointDevice('Angular 1', protocol.ActuatorType.ROTARY, '/dev/ttyS6', True, 27, 26, -425, -18125, 18125)
         self.angular_joint_2_device = JointDevice('Angular 2', protocol.ActuatorType.ROTARY, '/dev/ttyS11', True, 27, 26, -425, -26000, 26000)
-        self.angular_joint_3_device = JointDevice('Angular 3', protocol.ActuatorType.ROTARY, '/dev/ttyS10', True, 27, 26, -425, -26000, 26000)
+        self.angular_joint_3_device = JointDevice('Angular 3', protocol.ActuatorType.ROTARY, '/dev/ttyS10', False, 27, 26, -425, -26000, 26000)
 
         self.angular_joints = [self.angular_joint_1_device, self.angular_joint_2_device, self.angular_joint_3_device]
         self.linear_joints = [self.linear_joint_0_device]

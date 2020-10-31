@@ -1,6 +1,8 @@
 from flask import Flask, request, send_from_directory,  Response, render_template, jsonify
 from robotcontroller.ik import IkSolver
 from robotcontroller.kinematics import RobotTopology
+from robotcontroller.ikcontroller import IkController
+from multiprocessing import Process, Manager
 import numpy as np
 from flask import jsonify
 
@@ -14,22 +16,14 @@ app.config['SECRET_KEY'] = 'secret!'
 app.config['SESSION_TYPE'] = 'filesystem'
 app.config['TEMPLATES_AUTO_RELOAD'] = True
 socketio = SocketIO(app, async_mode=None)
-robot_topology = RobotTopology(l1=142.5, l2=142.5, l3=142.5 + 19.0, h1=290,
-    angle_wide_1=248, angle_wide_2=248, angle_wide_3=248)
-global ik_solver
-ik_solver = None
-
-def init_ik_solver():
-    global ik_solver
-    def multithreaded_ik_solver_init():
-        global ik_solver
-        if ik_solver is None:
-            ik_solver = IkSolver(robot_topology)
-    thread = Thread(target=multithreaded_ik_solver_init)
-    thread.daemon = True
-    thread.start()
-
-init_ik_solver()
+robot_topology = RobotTopology(l1=142, l2=142, l3=142, h1=30, angle_wide_1=180, angle_wide_2=180 + 90, angle_wide_3=180 + 90)
+global ik_controller
+print('Loading IK Controller')
+ik_controller = IkController(robot_topology)
+print('IK Controller loaded')
+print('Setting Up IK Controller')
+ik_controller.setup()
+print('IK Controller Set Up')
 
 @socketio.on('connect')
 def test_connect():
@@ -45,31 +39,36 @@ def write_target_state():
     angle_1 = float(request.form['angle_1'])
     angle_2 = float(request.form['angle_2'])
     angle_3 = float(request.form['angle_3'])
-    #arduino_connector = ArduinoConnector('/dev/ttyUSB0')
-    #arduino_connector.write_target_state([linear_1, angle_1, angle_2, angle_3])
+    angles = [angle_1, angle_2, angle_3]
+    angles = [ (angle / 180.0) * np.pi for angle in angles]
+    positions = [linear_1] + angles
+    ik_controller.move(positions)
     return 'OK', 200
 
 @app.route('/inverse_kinematics', methods=['POST'])
 def inverse_kinematics():
-    global ik_solver
+    global ik_controller
     x = float(request.form['x'])
     y = float(request.form['y'])
     z = float(request.form['z'])
     dx = float(request.form['dx'])
     dy = float(request.form['dy'])
-    solutions = ik_solver.compute_constrained_ik(dx=dx, dy=dy, x=x, y=y)
+    solutions = []
+    solutions = ik_controller.ik_solver.compute_constrained_ik(dx=dx, dy=dy, x=x, y=y)
     if len(solutions) > 0:
         print(solutions)
+        ui_solution = {}
         angle_solution = solutions[0].angle_solution
-        for angle in angle_solution:
-            angle_solution[angle] = round( angle_solution[angle] * 180.0 / np.pi, 4 )
-            if angle_solution[angle] < 0.0:
-                angle_solution[angle] += 360
-        angle_solution['linear_1'] = z
-        angle_solution['solution_type'] = solutions[0].solution_type
-        return jsonify(solutions[0].angle_solution)
+        for angle_idx in range(len(angle_solution)):
+            solution = round( angle_solution[angle_idx] * 180.0 / np.pi, 4 )
+            if solution < 0.0:
+                solution += 360
+            ui_solution[f'angle_{angle_idx + 1}'] = solution
+        ui_solution['linear_1'] = z
+        ui_solution['solution_type'] = solutions[0].solution_type
+        return jsonify(ui_solution)
     else:
-        return 'OK', 404
+        return 'NO IK SOLUTION FOUND', 404
 
 @app.route('/state_updated', methods=['POST'])
 def state_updated():

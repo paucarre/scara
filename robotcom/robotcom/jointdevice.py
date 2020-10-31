@@ -250,12 +250,12 @@ class JointDevice():
 
 if __name__ == '__main__':
     #joint = JointDevice('Linear 0', protocol.ActuatorType.LINEAR, '/dev/ttyS5', True, 27, 26, 0, 1000, 51000)
-    joint = JointDevice('Angular 2', protocol.ActuatorType.ROTARY, '/dev/ttyS11', True, 27, 26, -425, -26000, 26000)
+    joint = JointDevice('Angular 3', protocol.ActuatorType.ROTARY, '/dev/ttyS10', False, 27, 26, -425, -26000, 26000)
     joint.open()
     joint.configure()
     joint.home_until_finished()
     #joint.configure_min_max_steps(1000, 51000)
-    joint.move_to_target_until_is_reached(-26000)
-    joint.move_to_target_until_is_reached(+26000)
-    #joint.move_to_target_until_is_reached(10000)
+    #joint.move_to_target_until_is_reached(-26000)
+    #joint.move_to_target_until_is_reached(+26000)
+    joint.move_to_target_until_is_reached(10000)
     joint.close()

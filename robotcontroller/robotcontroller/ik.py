@@ -14,7 +14,7 @@ class IkSolution():
         self.solution_type = solution_type
 
     def __repr__(self):
-       return f'Angle: {self.angle_solution} | Cartesian: {self.cartesian_solution} | Type: {self.solution_type}'
+       return f'Angle: {[angle * 360 / (2 * math.pi) for angle in self.angle_solution]} | Cartesian: {self.cartesian_solution} | Type: {self.solution_type}'
 
 class IkSolver():
 
@@ -71,16 +71,6 @@ class IkSolver():
         angle_2 = IkSolver.angle_from_vector(x2 - x1, y2 - y1)
         angle_3 = IkSolver.angle_from_vector(x3 - x2, y3 - y2)
 
-        '''
-        # make angles relatives to one another
-        angle_1_diff = angle_1
-        angle_2_diff = angle_2 - angle_1
-        angle_3_diff = angle_3 - angle_2
-        angle_1_diff = IkSolver.normalize_rads(angle_1)
-        angle_2_diff = IkSolver.normalize_rads(angle_2_diff)
-        angle_3_diff = IkSolver.normalize_rads(angle_3_diff)
-        '''
-
         solution_angles = [angle_1, angle_2, angle_3]
 
         return IkSolution(solution_angles, solution_cartesian, solution_type)
@@ -88,12 +78,11 @@ class IkSolver():
 
     @staticmethod
     def angle_is_within_range(angle, angle_wide):
-        if (angle > np.pi):
-            angle = angle - (2.0 * np.pi)
-        if (angle < 0.0):
-            return angle > - angle_wide / 2.0
-        else:
-            return angle < angle_wide / 2.0
+        while angle < 0.0:
+            angle = (2.0 * np.pi) + angle
+        if angle > np.pi:
+            angle = (2.0 * np.pi) - angle
+        return angle <= angle_wide / 2.0
 
     def point_to_x_y(self, point):
         vector = self.cga.to_vector(point)
@@ -170,7 +159,7 @@ class IkSolver():
         constrained_solutions = []
         for solution in solutions:
             angle_solution = solution.angle_solution
-            if IkSolver.angle_is_within_range(angle_solution[0] - (np.pi / 2.0), IkSolver.to_rads(self.robot_topology.angle_wide_1)) and \
+            if IkSolver.angle_is_within_range(angle_solution[0], IkSolver.to_rads(self.robot_topology.angle_wide_1)) and \
                 IkSolver.angle_is_within_range(angle_solution[1], IkSolver.to_rads(self.robot_topology.angle_wide_2)) and \
                 IkSolver.angle_is_within_range(angle_solution[2], IkSolver.to_rads(self.robot_topology.angle_wide_3)):
                 constrained_solutions.append(solution)
@@ -181,17 +170,10 @@ class IkSolver():
         return min((2 * np.pi) - abs(angle_1 - angle_2), abs(angle_1 - angle_2))
 
     def test(self):
-        l1_original = self.robot_topology.l1
-        l2_original = self.robot_topology.l2
-        l3_original = self.robot_topology.l3
+        robot_topology_original = self.robot_topology
 
-        angle_wide_1_original = self.robot_topology.angle_wide_1
-        angle_wide_2_original = self.robot_topology.angle_wide_2
-        angle_wide_3_original = self.robot_topology.angle_wide_3
+        self.robot_topology = RobotTopology(l1=10, l2=10, l3=10, h1=100, angle_wide_1=180, angle_wide_2=180 + 90, angle_wide_3=180 + 90)
 
-        self.robot_topology.l1=10
-        self.robot_topology.l2=10
-        self.robot_topology.l3=10
         solutions = self.compute_ik(dx=1, dy=1, x=0, y=10)
         solution_0 = solutions[0].angle_solution
         '''
@@ -239,16 +221,12 @@ class IkSolver():
         assert IkSolver.to_grads(IkSolver.angle_from_vector(-1.0,  0.0)) == 180.0
         assert IkSolver.to_grads(IkSolver.angle_from_vector( 0.0, -1.0)) == 270.0
 
+
         self.robot_topology.angle_wide_1 = 280
         self.robot_topology.angle_wide_2 = 280
         self.robot_topology.angle_wide_3 = 280
-        solutions = self.compute_constrained_ik(dx=1, dy=1, x=0, y=25)
+        solutions = self.compute_constrained_ik(dx=0, dy=1, x=0, y=25)
         assert len(solutions) == 2
-        self.robot_topology.angle_wide_1 = 210
-        self.robot_topology.angle_wide_2 = 210
-        self.robot_topology.angle_wide_3 = 210
-        solutions = self.compute_constrained_ik(dx=1, dy=1, x=0, y=25)
-        assert len(solutions) == 1
         self.robot_topology.angle_wide_1 = 100
         self.robot_topology.angle_wide_2 = 100
         self.robot_topology.angle_wide_3 = 100
@@ -269,23 +247,15 @@ class IkSolver():
         self.robot_topology.l1=10
         self.robot_topology.l2=10
         self.robot_topology.l3=10
-        self.robot_topology.angle_wide_1 = 280
-        self.robot_topology.angle_wide_2 = 280
-        self.robot_topology.angle_wide_3 = 280
-        solutions = self.compute_constrained_ik(dx=1, dy=0, x=-40, y=40)
+        solutions = self.compute_ik(dx=1, dy=0, x=-40, y=40)
         assert len(solutions) == 1
         angle_solution = solutions[0].angle_solution
         assert abs( IkSolver.angle_difference( angle_solution[0], IkSolver.to_rads(45.0 + 90)) ) < 0.1
         assert abs( IkSolver.angle_difference( angle_solution[1], IkSolver.to_rads(135.0)) ) < 0.1
         assert abs( IkSolver.angle_difference( angle_solution[2], IkSolver.to_rads(135.0)) ) < 0.1
 
-        self.robot_topology.angle_wide_1 = angle_wide_1_original
-        self.robot_topology.angle_wide_2 = angle_wide_2_original
-        self.robot_topology.angle_wide_3 = angle_wide_3_original
+        self.robot_topology = robot_topology_original
 
-        self.robot_topology.l1 = l1_original
-        self.robot_topology.l2 = l2_original
-        self.robot_topology.l3 = l3_original
 
 
 if __name__ == '__main__':
