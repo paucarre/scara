@@ -7,7 +7,7 @@ class ScaraRobot():
     '''
         Not using Processing pool as protocol can't be pickled
         Not using threading pool as serial connections are
-        somehow lost and there is no noticeable performance improvement
+        somehow lost and there is no noticeable performance improvement (the 'somehow lost' problem might be now fixed)
     '''
 
     def __init__(self):

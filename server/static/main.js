@@ -35,7 +35,7 @@ class RobotDrawer {
     distance(source, destination) {
         return [destination[0] - source[0], destination[1] - source[1]];
     }
-    
+
     line(start, end, stroke_width, stroke_color, stroke_opacity, dashed) {
         let svg_dashed = '';
         if(dashed) {
@@ -53,7 +53,7 @@ class RobotDrawer {
             // line
             let origin_point = this.scale_and_round(cartesian_solution[idx]);
             let destination_point = this.scale_and_round(cartesian_solution[idx + 1]);
-            contents = contents + this.line([origin_point[0], -origin_point[1]], 
+            contents = contents + this.line([origin_point[0], -origin_point[1]],
                 [destination_point[0], -destination_point[1]],  2, color, 0.6, false);
 
             // center
@@ -61,26 +61,26 @@ class RobotDrawer {
             if(idx == 0) {
                 source_direction = [0.0, 1.0];
             } else {
-                source_direction = this.normalize( this.distance(cartesian_solution[idx - 1] , 
+                source_direction = this.normalize( this.distance(cartesian_solution[idx - 1] ,
                     cartesian_solution[idx]) );
             }
-            let destination_direction = this.normalize( this.distance(cartesian_solution[idx], 
+            let destination_direction = this.normalize( this.distance(cartesian_solution[idx],
                 cartesian_solution[idx + 1]) );
-            
+
             let source_point      = [cartesian_solution[idx][0], cartesian_solution[idx][1]];
-            destination_point = [cartesian_solution[idx][0] + (radius * source_direction[0]), 
+            destination_point = [cartesian_solution[idx][0] + (radius * source_direction[0]),
                 cartesian_solution[idx][1] + (radius * source_direction[1]) ];
             source_point = this.scale_and_round(source_point);
             destination_point   = this.scale_and_round(destination_point);
-            //contents = contents + this.line([source_point[0], -source_point[1]], 
+            //contents = contents + this.line([source_point[0], -source_point[1]],
             //    [destination_point[0], -destination_point[1]],  2, color, 0.4, true);
 
             // arc
-            source_point      = [cartesian_solution[idx][0] + (radius * source_direction[0]), 
+            source_point      = [cartesian_solution[idx][0] + (radius * source_direction[0]),
                 cartesian_solution[idx][1] + (radius * source_direction[1])];
-            destination_point = [cartesian_solution[idx][0] + (radius * destination_direction[0]), 
+            destination_point = [cartesian_solution[idx][0] + (radius * destination_direction[0]),
                 cartesian_solution[idx][1] + (radius * destination_direction[1]) ];
-            
+
             source_point   = this.scale_and_round(source_point);
             destination_point   = this.scale_and_round(destination_point);
             let angle = state.parameters[`angle_${idx + 1}`];
@@ -112,7 +112,7 @@ class RobotDrawer {
     draw_angular_square() {
         return `<rect fill="none" width="${this.size - 2}" height="${(this.size / 2) + 100}" style="stroke-width:1;stroke:rgb(0,0,0)" />`
     }
-    
+
     draw_linear_square() {
         return `<rect fill="none" x="${this.size}" y="0" width="30" height="${(this.size / 2) + 100}" style="stroke-width:1;stroke:rgb(0,0,0)" />`
     }
@@ -133,9 +133,9 @@ class RobotDrawer {
             let radius = 5 * this.scale;
             let source_point = this.scale_and_round([tracker_state.x, tracker_state.y]);
             let position_circle = `<circle cx="${source_point[0]}" cy="${-source_point[1]}" r="${radius}" stroke="orange" stroke-width="1" fill="None" ${dash_config}/>`;
-            
+
             let stroke_width = 1;
-            
+
             // tangent line
             let start_tangent = [tracker_state.x + (100 * tracker_state.dy),
                 tracker_state.y - (100 * tracker_state.dx)];
@@ -143,8 +143,8 @@ class RobotDrawer {
                 tracker_state.y + (100 * tracker_state.dx)];
             start_tangent   = this.scale_and_round(start_tangent);
             end_tangent   = this.scale_and_round(end_tangent);
-            let orientation_line_tangent = `<line x1="${start_tangent[0]}" y1="${-start_tangent[1]}" 
-                    x2="${end_tangent[0]}" y2="${-end_tangent[1]}" 
+            let orientation_line_tangent = `<line x1="${start_tangent[0]}" y1="${-start_tangent[1]}"
+                    x2="${end_tangent[0]}" y2="${-end_tangent[1]}"
                     style="stroke:green;stroke-width:${stroke_width}" ${dash_config}/>`
 
             // orthogonal line
@@ -154,8 +154,8 @@ class RobotDrawer {
                 tracker_state.y - (100 * tracker_state.dy)];
             start_orthogonal   = this.scale_and_round(start_orthogonal);
             end_orthogonal   = this.scale_and_round(end_orthogonal);
-            let orientation_line_orthogonal = `<line x1="${start_orthogonal[0]}" y1="${-start_orthogonal[1]}" 
-                    x2="${end_orthogonal[0]}" y2="${-end_orthogonal[1]}" 
+            let orientation_line_orthogonal = `<line x1="${start_orthogonal[0]}" y1="${-start_orthogonal[1]}"
+                    x2="${end_orthogonal[0]}" y2="${-end_orthogonal[1]}"
                     style="stroke:orange;stroke-width:${stroke_width}" ${dash_config}/>`
 
             let linear = this.draw_linear(tracker_state.z, 'orange');
@@ -216,7 +216,7 @@ const setup_controller_connection = function() {
     const socket = io.connect( {transports: ['websocket']});
     socket.on('state_updated', function(data) {
         for (var state_type in data) {
-            if (data.hasOwnProperty(state_type)) { 
+            if (data.hasOwnProperty(state_type)) {
                 const state = data[state_type];
                 for (var axis in state.parameters) {
                     if (state.parameters.hasOwnProperty(axis)) {
@@ -224,7 +224,7 @@ const setup_controller_connection = function() {
                         if(axis_div != null) {
                             //TODO: maybe make this more elegant (it's trying to check if it's an angle parameter)
                             let parameter_value = state.parameters[axis]
-                            if(axis.includes('angle')) { 
+                            if(axis.includes('angle')) {
                                 parameter_value = to_degrees(parameter_value);
                             }
                             axis_div.innerHTML = parameter_value.toFixed(2);
@@ -240,10 +240,10 @@ const setup_controller_connection = function() {
             //TODO: this is approximate, better to get precise state when tracker updates
             tracker_state = data.tracker_state;
             robot_drawer.last_tracker_state = data.tracker_state
-            robot_drawer.draw_states(data.target_state, data.current_state, 
+            robot_drawer.draw_states(data.target_state, data.current_state,
                 tracker_state, false);
         } else {
-            robot_drawer.draw_states(data.target_state, data.current_state, 
+            robot_drawer.draw_states(data.target_state, data.current_state,
                 robot_drawer.last_tracker_state, true);
         }
     });

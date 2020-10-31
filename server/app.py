@@ -1,6 +1,6 @@
 from flask import Flask, request, send_from_directory,  Response, render_template, jsonify
-from ik import IkSolver
-from kinematics import RobotTopology
+from robotcontroller.ik import IkSolver
+from robotcontroller.kinematics import RobotTopology
 import numpy as np
 from flask import jsonify
 
@@ -9,14 +9,12 @@ import json, os
 from threading import Thread
 from flask_socketio import SocketIO, emit
 
-from arduino_connector import ArduinoConnector
-
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
 app.config['SESSION_TYPE'] = 'filesystem'
 app.config['TEMPLATES_AUTO_RELOAD'] = True
 socketio = SocketIO(app, async_mode=None)
-robot_topology = RobotTopology(l1=142.5, l2=142.5, l3=142.5 + 19.0, h1=290, 
+robot_topology = RobotTopology(l1=142.5, l2=142.5, l3=142.5 + 19.0, h1=290,
     angle_wide_1=248, angle_wide_2=248, angle_wide_3=248)
 global ik_solver
 ik_solver = None
@@ -47,8 +45,8 @@ def write_target_state():
     angle_1 = float(request.form['angle_1'])
     angle_2 = float(request.form['angle_2'])
     angle_3 = float(request.form['angle_3'])
-    arduino_connector = ArduinoConnector('/dev/ttyUSB0')
-    arduino_connector.write_target_state([linear_1, angle_1, angle_2, angle_3])
+    #arduino_connector = ArduinoConnector('/dev/ttyUSB0')
+    #arduino_connector.write_target_state([linear_1, angle_1, angle_2, angle_3])
     return 'OK', 200
 
 @app.route('/inverse_kinematics', methods=['POST'])

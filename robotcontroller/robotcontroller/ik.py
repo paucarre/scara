@@ -1,8 +1,8 @@
-from kinematics import RobotForwardKinematics, RobotTopology
+from robotcontroller.kinematics import RobotForwardKinematics, RobotTopology
 
 import numpy as np
 import math
-from ga.ConformalGeometricAlgebra import ConformalGeometricAlgebra
+from robotcontroller.ga.ConformalGeometricAlgebra import ConformalGeometricAlgebra
 import traceback
 import sys
 
