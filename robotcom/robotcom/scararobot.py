@@ -11,10 +11,11 @@ class ScaraRobot():
     '''
 
     def __init__(self):
-        self.linear_joint_0_device = JointDevice('Linear 0', protocol.ActuatorType.LINEAR, '/dev/ttyS5', True, 27, 26, 0)
-        self.angular_joint_1_device = JointDevice('Angular 1', protocol.ActuatorType.ROTARY, '/dev/ttyS6', True, 27, 26, -425)
-        self.angular_joint_2_device = JointDevice('Angular 2', protocol.ActuatorType.ROTARY, '/dev/ttyS11', True, 27, 26, -425)
-        self.angular_joint_3_device = JointDevice('Angular 3', protocol.ActuatorType.ROTARY, '/dev/ttyS10', True, 27, 26, -425)
+        self.linear_joint_0_device = JointDevice('Linear 0', protocol.ActuatorType.LINEAR, '/dev/ttyS5', True, 27, 26, 0, 1000, 51000)
+        self.angular_joint_1_device = JointDevice('Angular 1', protocol.ActuatorType.ROTARY, '/dev/ttyS6', True, 27, 26, -425, -18125, 18125)
+        self.angular_joint_2_device = JointDevice('Angular 2', protocol.ActuatorType.ROTARY, '/dev/ttyS11', True, 27, 26, -425, -26000, 26000)
+        self.angular_joint_3_device = JointDevice('Angular 3', protocol.ActuatorType.ROTARY, '/dev/ttyS10', True, 27, 26, -425, -26000, 26000)
+
         self.angular_joints = [self.angular_joint_1_device, self.angular_joint_2_device, self.angular_joint_3_device]
         self.linear_joints = [self.linear_joint_0_device]
         self.joints = self.linear_joints + self.angular_joints
@@ -42,10 +43,6 @@ class ScaraRobot():
         logger.debug(f'Joint {joint.label} configured')
 
     def home(self):
-        configure_controller_processes = [Process(target=ScaraRobot.configure_controller_joint, args=(joint, 5000, 500, self.logger, )) for id, joint in enumerate(self.joints)]
-        [configure_controller_process.start() for configure_controller_process in configure_controller_processes]
-        [configure_controller_process.join() for configure_controller_process in configure_controller_processes]
-
         linear_home_process = Process(target=ScaraRobot.home_joint, args=(self.linear_joint_0_device, self.logger, ))
         linear_home_process.start()
         [ScaraRobot.home_joint(angular_joint, self.logger) for id, angular_joint in enumerate(self.angular_joints)]

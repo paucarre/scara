@@ -33,7 +33,7 @@ class ControllerConfiguration():
 
 class JointDevice():
 
-    def __init__(self, label, actuator_type, serial_name, dir_high_is_clockwise, dir_pin, step_pin, homing_offset, baud_rate=9600):
+    def __init__(self, label, actuator_type, serial_name, dir_high_is_clockwise, dir_pin, step_pin, homing_offset, min_steps, max_steps, baud_rate=9600):
         self.label = label
         self.parser = protocol.Parser()
         self.actuator_type = actuator_type
@@ -43,6 +43,9 @@ class JointDevice():
         self.step_pin = step_pin
         self.dir_pin = dir_pin
         self.homing_offset = homing_offset
+        self.min_steps = min_steps
+        self.max_steps = max_steps
+
         self.logger = logging.getLogger(f'{label} Axis')
         self.logger.setLevel(logging.DEBUG)
         stream_handler = logging.StreamHandler()
@@ -94,6 +97,7 @@ class JointDevice():
             self._try_to_get_response(protocol.CONFIGURE_RESPONSE_MESSAGE_TYPE))
         configure_message_result = configure_message_result.map(lambda message: \
             message.get_data()).value_or(None)
+        self.configure_min_max_steps(self.min_steps, self.max_steps)
         return configure_message_result
 
 
@@ -147,7 +151,7 @@ class JointDevice():
         return result
 
     def home(self):
-        self.configure_controller(5000, 500)
+        configure_result = self.configure_controller(5000, 500)
         home_message = protocol.Message.make_homing_message()
         home_result = self._try_to_send_message(home_message)
         home_result = home_result.bind(lambda message: \
@@ -232,6 +236,10 @@ class JointDevice():
     def move_to_target_until_is_reached(self, target_steps):
         #print(f"---- {target_steps} ----")
         result = self.set_target_steps(target_steps)
+        if target_steps > self.max_steps:
+            target_steps = self.max_steps
+        elif target_steps < self.min_steps:
+            target_steps = self.min_steps
         #print(result)
         steps = self.get_steps()
         #print(steps)
@@ -241,12 +249,13 @@ class JointDevice():
 
 
 if __name__ == '__main__':
-    linear_joint_0_device = JointDevice('Linear 0', protocol.ActuatorType.LINEAR, '/dev/ttyS5', True, 27, 26, 0)
-    linear_joint_0_device.open()
-    linear_joint_0_device.configure()
-    linear_joint_0_device.home_until_finished()
-    #linear_joint_0_device.configure_min_max_steps(5000, 6000)
-    linear_joint_0_device.move_to_target_until_is_reached(30000)
-    #linear_joint_0_device.move_to_target_until_is_reached(33000)
-    #linear_joint_0_device.move_to_target_until_is_reached(1000)
-    linear_joint_0_device.close()
+    #joint = JointDevice('Linear 0', protocol.ActuatorType.LINEAR, '/dev/ttyS5', True, 27, 26, 0, 1000, 51000)
+    joint = JointDevice('Angular 2', protocol.ActuatorType.ROTARY, '/dev/ttyS11', True, 27, 26, -425, -26000, 26000)
+    joint.open()
+    joint.configure()
+    joint.home_until_finished()
+    #joint.configure_min_max_steps(1000, 51000)
+    joint.move_to_target_until_is_reached(-26000)
+    joint.move_to_target_until_is_reached(+26000)
+    #joint.move_to_target_until_is_reached(10000)
+    joint.close()
