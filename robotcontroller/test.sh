@@ -1,0 +1,1 @@
+curl -d '{ "type": "MOVE_TO_STEPS", "steps": [1000, 10000,  10000, 10000] }' -H 'Content-Type: application/json' http://localhost:6000/message

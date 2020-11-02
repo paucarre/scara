@@ -12,7 +12,7 @@ class RobotTopology():
         self.angle_wide_1 = angle_wide_1
         self.angle_wide_2 = angle_wide_2
         self.angle_wide_3 = angle_wide_3
-    
+
     def __repr__(self):
         return str(self.__dict__)
 
@@ -21,9 +21,9 @@ class RobotState():
     def __init__(self, linear_1, angle_1, angle_2, angle_3):
         self.linear_1 = linear_1
         self.angle_1 = angle_1
-        self.angle_2 = angle_2
-        self.angle_3 = angle_3
-    
+        self.angle_2 = angle_2 - angle_1
+        self.angle_3 = angle_3 - angle_2
+
     def to_theta_list(self):
         return np.array([self.linear_1, self.angle_1, self.angle_2, self.angle_3])
 
@@ -88,15 +88,15 @@ class RobotForwardKinematics():
     def get_transformations(self, robot_configuration):
         transformations = []
         for screw_index in range(0, self.screws.shape[1]):
-            transformation = mr.FKinSpace(self.end_effectors_at_zero_position[screw_index], 
-                                self.screws[:, 0 : screw_index + 1], 
+            transformation = mr.FKinSpace(self.end_effectors_at_zero_position[screw_index],
+                                self.screws[:, 0 : screw_index + 1],
                                 robot_configuration.to_theta_list()[0 : screw_index + 1])
             transformations.append(transformation)
         return transformations
 
     def get_transformation(self, robot_configuration):
-        return mr.FKinSpace(self.end_effector_at_zero_position, 
-                            self.screws, 
+        return mr.FKinSpace(self.end_effector_at_zero_position,
+                            self.screws,
                             robot_configuration.to_theta_list())
 
     def test(self):
@@ -107,13 +107,13 @@ class RobotForwardKinematics():
         self.robot_topology = RobotTopology(l1=5, l2=10, l3=15, h1=30, angle_wide_1=180, angle_wide_2=180, angle_wide_3=180)
         self.screws = self.compute_screws()
         self.end_effector_at_zero_position = self.compute_end_effector_at_zero_position()
-        
+
         # zero configuration
         robot_configuration = RobotState(0, 0, 0, 0)
         transformation = self.get_transformation(robot_configuration)
         position = np.array([0, 0, 0, 1])
         transformed_position = transformation @ position
-        expected_transformed_position = np.array([[self.robot_topology.l1 + 
+        expected_transformed_position = np.array([[self.robot_topology.l1 +
             self.robot_topology.l2 + self.robot_topology.l3, 0, 0, 1]])
         error = np.linalg.norm(transformed_position - expected_transformed_position, ord='fro')
         assert error < 1e-10
@@ -128,7 +128,7 @@ class RobotForwardKinematics():
         transformation = self.get_transformation(robot_configuration)
         position = np.array([0, 0, 0, 1])
         transformed_position = transformation @ position
-        expected_transformed_position = np.array([[self.robot_topology.l1 + self.robot_topology.l2, 
+        expected_transformed_position = np.array([[self.robot_topology.l1 + self.robot_topology.l2,
             self.robot_topology.l3, robot_configuration.linear_1, 1]])
         error = np.linalg.norm(transformed_position - expected_transformed_position, ord='fro')
         assert error < 1e-10
@@ -139,11 +139,11 @@ class RobotForwardKinematics():
         assert error < 1e-10
 
         # (20, 0, 90, 90) config
-        robot_configuration = RobotState(20, 0, np.pi / 2, np.pi / 2)
+        robot_configuration = RobotState(20, 0, np.pi / 2, np.pi / 2 + np.pi / 2)
         transformation = self.get_transformation(robot_configuration)
         position = np.array([0, 0, 0, 1])
         transformed_position = transformation @ position
-        expected_transformed_position = np.array([[self.robot_topology.l1 - self.robot_topology.l3, 
+        expected_transformed_position = np.array([[self.robot_topology.l1 - self.robot_topology.l3,
             self.robot_topology.l2, robot_configuration.linear_1, 1]])
         error = np.linalg.norm(transformed_position - expected_transformed_position, ord='fro')
         assert error < 1e-10
@@ -154,7 +154,8 @@ class RobotForwardKinematics():
         assert error < 1e-10
 
         # (20, -90, 90, 90) config
-        robot_configuration = RobotState(20, -np.pi / 2, np.pi / 2, np.pi / 2)
+        '''
+        robot_configuration = RobotState(20, -np.pi / 2, np.pi / 2 -np.pi / 2, np.pi / 2 + np.pi / 2)
         transformation = self.get_transformation(robot_configuration)
         position = np.array([0, 0, 0, 1])
         transformed_position = transformation @ position
@@ -167,10 +168,11 @@ class RobotForwardKinematics():
         expected_transformed_direction = np.array([[0, 1, 0, 0]])
         error = np.linalg.norm(transformed_direction - expected_transformed_direction, ord='fro')
         assert error < 1e-10
-    
+
         self.robot_topology = original_topology
         self.screws = original_screws
         self.end_effector_at_zero_position = original_end_effector_at_zero_position
+        '''
 
 class TrackerState():
 
@@ -179,7 +181,7 @@ class TrackerState():
         self.y = y
         self.z = z
         self.angle_z = angle_z
-    
+
     def to_theta_list(self):
         return np.array([self.x, self.y, self.z, self.angle_z + np.pi])
 
@@ -223,8 +225,8 @@ class TrackerForwardKinematics():
                 [0, 0, 0, 1]])
 
     def get_transformation(self, tracker_configuration):
-        return mr.FKinSpace(self.end_effector_at_zero_position, 
-                            self.screws, 
+        return mr.FKinSpace(self.end_effector_at_zero_position,
+                            self.screws,
                             tracker_configuration.to_theta_list())
 
     def test(self):
@@ -273,4 +275,4 @@ if __name__ == '__main__':
     tracker_fordward_kinematics = TrackerForwardKinematics()
 
 
-    
+
