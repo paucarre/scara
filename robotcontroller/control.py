@@ -1,4 +1,4 @@
-from robotcontroller.controller import control
+from robotcontroller.controller import control, get_robot_communication
 from flask_socketio import SocketIO, emit
 from flask import Flask, request, send_from_directory,  Response, render_template, jsonify
 from flask import jsonify
@@ -12,7 +12,8 @@ if task_queue is None:
     task_queue = Queue()
 if control_process is None:
     print("CREATING CONTROL PROCESS")
-    control_process = control(task_queue)
+    robot_communication = get_robot_communication(True)
+    control_process = control(task_queue, robot_communication)
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'

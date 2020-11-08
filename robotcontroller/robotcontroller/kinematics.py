@@ -168,11 +168,12 @@ class RobotForwardKinematics():
         expected_transformed_direction = np.array([[0, 1, 0, 0]])
         error = np.linalg.norm(transformed_direction - expected_transformed_direction, ord='fro')
         assert error < 1e-10
+        '''
 
         self.robot_topology = original_topology
         self.screws = original_screws
         self.end_effector_at_zero_position = original_end_effector_at_zero_position
-        '''
+
 
 class TrackerState():
 

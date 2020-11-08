@@ -1,7 +1,6 @@
 from flask import Flask, request, send_from_directory,  Response, render_template, jsonify
 from robotcontroller.ik import IkSolver
 from robotcontroller.kinematics import RobotTopology
-from robotcontroller.ikcontroller import IkController
 from multiprocessing import Process, Manager
 import numpy as np
 from flask import jsonify
@@ -19,12 +18,6 @@ app.config['SECRET_KEY'] = 'secret!'
 app.config['SESSION_TYPE'] = 'filesystem'
 app.config['TEMPLATES_AUTO_RELOAD'] = True
 socketio = SocketIO(app, async_mode=None)
-robot_topology = RobotTopology(l1=142, l2=142, l3=142, h1=30, angle_wide_1=180, angle_wide_2=180 + 90, angle_wide_3=180 + 90)
-global ik_solver
-
-print('Loading IK')
-ik_solver = IkSolver(robot_topology)
-print('IK loaded')
 
 @socketio.on('connect')
 def test_connect():
@@ -61,25 +54,25 @@ def write_target_state():
 
 @app.route('/inverse_kinematics', methods=['POST'])
 def inverse_kinematics():
-    global ik_solver
-    x = float(request.form['x'])
-    y = float(request.form['y'])
-    z = float(request.form['z'])
-    dx = float(request.form['dx'])
-    dy = float(request.form['dy'])
-    solutions = []
-    solutions = ik_solver.compute_constrained_ik(dx=dx, dy=dy, x=x, y=y)
-    if len(solutions) > 0:
-        print(solutions)
+    data = {
+        'x': float(request.form['x']),
+        'y': float(request.form['y']),
+        'z': float(request.form['z']),
+        'dx': float(request.form['dx']),
+        'dy': float(request.form['dy'])
+    }
+    response = requests.post('http://localhost:7000/inverse_kinematics', json = data, verify = False)
+    if response.status_code == requests.codes.ok:
+        solution = response.json()
+        angle_solution = solution['angle_solution']
         ui_solution = {}
-        angle_solution = solutions[0].angle_solution
         for angle_idx in range(len(angle_solution)):
-            solution = round( angle_solution[angle_idx] * 180.0 / np.pi, 4 )
-            if solution < 0.0:
-                solution += 360
-            ui_solution[f'angle_{angle_idx + 1}'] = solution
-        ui_solution['linear_1'] = z
-        ui_solution['solution_type'] = solutions[0].solution_type
+            current_solution = round( angle_solution[angle_idx] * 180.0 / np.pi, 4 )
+            if current_solution < 0.0:
+                current_solution += 360
+            ui_solution[f'angle_{angle_idx + 1}'] = current_solution
+        ui_solution['linear_1'] = data['z']
+        ui_solution['solution_type'] = solution['solution_type']
         return jsonify(ui_solution)
     else:
         return 'NO IK SOLUTION FOUND', 404

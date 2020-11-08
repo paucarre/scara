@@ -5,6 +5,7 @@ from thespian.actors import *
 from robotcontroller.ik import IkSolver, RobotForwardKinematics
 from robotcontroller.kinematics import RobotTopology, RobotState
 from robotcom.robot import RobotCommunication
+from robotcom.robot_simulation import SimulationRobotCommunication
 import numpy as np
 import time
 from multiprocessing import Process, Queue
@@ -12,13 +13,19 @@ import requests
 from threading import Thread
 import sys
 import traceback
+import math
 
-def get_robot_communication():
-    print('Setting Up Controller')
-    robot_communication = RobotCommunication()
-    robot_communication.setup()
-    print('Controller Set Up')
-    return robot_communication
+def get_robot_communication(is_real):
+    if is_real:
+        print('Setting Up Controller')
+        robot_communication = RobotCommunication()
+        robot_communication.setup()
+        print('Controller Set Up')
+        return robot_communication
+    else:
+        # Simulation
+        robot_communication = SimulationRobotCommunication([200, math.pi / 4, 0, -math.pi /4])
+        return robot_communication
 
 def publish(data, endpoint):
     if data is not None:
@@ -41,6 +48,7 @@ def get_state_data(robot_forward_kinamatics, current_parameters, target_paramete
     current_cartesian_state = [(transformation @ np.array([0, 0, 0, 1])).tolist() for transformation in robot_transformations_current]
     target_cartesian_state = [(transformation @ np.array([0, 0, 0, 1])).tolist() for transformation in robot_transformations_target]
     data = {
+        'topology': robot_forward_kinamatics.robot_topology.__dict__,
         'current_state': {
             'parameters': current_parameters.__dict__,
             'cartesian': current_cartesian_state
@@ -58,7 +66,7 @@ def control_loop(task_queue, robot_communication):
     robot_forward_kinamatics = RobotForwardKinematics(robot_topology)
     while(True):
         current_parameters = robot_communication.steps_to_parameters(robot_communication.get_steps())
-        target_parameter =robot_communication.steps_to_parameters(robot_communication.get_target_steps())
+        target_parameter = robot_communication.steps_to_parameters(robot_communication.get_target_steps())
         state_data = get_state_data(robot_forward_kinamatics, RobotState(*current_parameters), RobotState(*target_parameter))
         publish(state_data, endpoint)
         if not task_queue.empty():
@@ -72,8 +80,7 @@ def control_loop(task_queue, robot_communication):
                 steps = steps = robot_communication.get_steps()
                 message = { 'type': 'GET_STEPS_RESPONSE', 'steps': steps}
 
-def control(task_queue):
-    robot_communication = get_robot_communication()
+def control(task_queue, robot_communication):
     control_process = Process(target=control_loop, args=(task_queue, robot_communication, ))
     control_process.start()
     return control_process

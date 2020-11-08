@@ -1,5 +1,80 @@
 'use strict';
 
+const ComputeCameraView = function (canvas) {
+    let frustrum = 10;
+    let ratio = canvas.clientWidth / canvas.clientHeight;
+    camera.orthoLeft = -ratio * frustrum / 2;
+    camera.orthoRight = ratio * frustrum / 2;
+    camera.orthoTop = frustrum / 2;
+    camera.orthoBottom = -frustrum / 2;
+}
+
+const createScene = function (engine) {
+    let scene = new BABYLON.Scene(engine);
+    let camera = new BABYLON.UniversalCamera("Camera", new BABYLON.Vector3(0,0,-1), scene);
+    camera.mode = BABYLON.Camera.ORTHOGRAPHIC_CAMERA;
+    camera.position = new BABYLON.Vector3(0, 0, -100);
+    camera.inputs.addMouseWheel();
+    camera.setTarget(BABYLON.Vector3.Zero());
+    camera.attachControl(true);
+    camera.minZ = -10000;
+    camera.maxZ = 10000;
+    let light = new BABYLON.HemisphericLight("HemiLight", new BABYLON.Vector3(0, 0, -2), scene);
+    return scene;
+};
+
+class Robot {
+
+    constructor(scene, red, green, blue) {
+        this.red = red;
+        this.green = green;
+        this.blue = blue;
+        this.scene = scene;
+        this.axis_list = [];
+        this.keys = ['angle_1', 'angle_2', 'angle_3'];
+        this.topology_keys = ['l1', 'l2', 'l3'];
+    }
+
+    rotate_mesh_around_point(mesh, x , y, angle) {
+        mesh.translate(new BABYLON.Vector3(x , y, 0), 1, BABYLON.Space.LOCAL);
+        mesh.rotate(BABYLON.Axis.Z, angle, BABYLON.Space.LOCAL);
+        mesh.translate(new BABYLON.Vector3(x , y, 0), -1, BABYLON.Space.LOCAL);
+    };
+
+    create_meshes_from_topology(topology) {
+        for(var idx = 0; idx < this.topology_keys.length; idx ++) {
+            let axis = BABYLON.MeshBuilder.CreateBox("Axis_", {height: topology[this.topology_keys[idx]], width: 5, depth: 5}, this.scene);
+            let material = new BABYLON.StandardMaterial(this.scene);
+            material.alpha = 1;
+            material.diffuseColor = new BABYLON.Color3(this.red, this.green, this.blue);
+            axis.material = material;
+            this.axis_list.push(axis);
+        }
+    };
+
+    draw(state, topology) {
+        console.log(state);
+        let parameters = state.parameters;
+        let cartesian_solution = state.cartesian;
+        var accumulated_angle = - (Math.PI / 2);
+        let origni_distance = topology[this.topology_keys[0]] * 2;
+        if(this.axis_list.length == 0) {
+            this.create_meshes_from_topology(topology)
+        }
+        for(var idx = 0; idx < this.keys.length; idx ++) {
+            let last_position = new BABYLON.Vector3(-(origni_distance) + cartesian_solution[idx][0], cartesian_solution[idx][1], 0);
+            let axis = this.axis_list[idx];
+            axis.rotation = new BABYLON.Vector3(0, 0, 0);
+            axis.position = new BABYLON.Vector3(0, 0, 0);
+            axis.translate(last_position, 1, BABYLON.Space.LOCAL);
+            this.rotate_mesh_around_point(axis, 0, -topology[this.topology_keys[idx]] / 2, accumulated_angle + parameters[this.keys[idx]] );
+            accumulated_angle = accumulated_angle + parameters[this.keys[idx]]
+        }
+    };
+
+}
+
+
 class RobotTopology {
     constructor(l1, l2, l3, h1) {
         this.l1 = l1;
@@ -9,189 +84,6 @@ class RobotTopology {
     }
 }
 
-class RobotDrawer {
-
-    constructor(robot_topology, size) {
-        this.robot_topology = robot_topology;
-        this.size = size;
-        this.max_distance = 1.2 * (this.robot_topology.l1 + this.robot_topology.l2 + this.robot_topology.l3);
-        this.scale = this.size / (2.0 * this.max_distance);
-        this.last_tracker_state = null;
-    }
-
-    scale_and_round(points) {
-        return [( points[0] + this.max_distance ) * this.scale, ( points[1] - this.max_distance - 100) * this.scale];
-    }
-
-    to_rads(grads) {
-        return (grads / 360) * (2 * Math.PI);
-    }
-
-    normalize(vector) {
-        const norm = Math.sqrt( (vector[0] ** 2) + (vector[1] ** 2) );
-        return [ vector[0] / norm, vector[1] / norm ];
-    }
-
-    distance(source, destination) {
-        return [destination[0] - source[0], destination[1] - source[1]];
-    }
-
-    line(start, end, stroke_width, stroke_color, stroke_opacity, dashed) {
-        let svg_dashed = '';
-        if(dashed) {
-            svg_dashed = `stroke-dasharray="4"`;
-        }
-        return `<line x1="${start[0]}" y1="${start[1]}" x2="${end[0]}" y2="${end[1]}" ${svg_dashed} style="stroke-opacity:${stroke_opacity};stroke:${stroke_color};stroke-width:${stroke_width}" />`
-    }
-
-    draw_angular(state, radius, color) {
-        radius = radius / this.scale;
-        let contents = '';
-        let cartesian_solution = state.cartesian;
-        for(let idx = 0; idx < cartesian_solution.length - 1; idx++) {
-
-            // line
-            let origin_point = this.scale_and_round(cartesian_solution[idx]);
-            let destination_point = this.scale_and_round(cartesian_solution[idx + 1]);
-            contents = contents + this.line([origin_point[0], -origin_point[1]],
-                [destination_point[0], -destination_point[1]],  2, color, 0.6, false);
-
-            // center
-            let source_direction = null;
-            if(idx == 0) {
-                source_direction = [0.0, 1.0];
-            } else {
-                source_direction = this.normalize( this.distance(cartesian_solution[idx - 1] ,
-                    cartesian_solution[idx]) );
-            }
-            let destination_direction = this.normalize( this.distance(cartesian_solution[idx],
-                cartesian_solution[idx + 1]) );
-
-            let source_point      = [cartesian_solution[idx][0], cartesian_solution[idx][1]];
-            destination_point = [cartesian_solution[idx][0] + (radius * source_direction[0]),
-                cartesian_solution[idx][1] + (radius * source_direction[1]) ];
-            source_point = this.scale_and_round(source_point);
-            destination_point   = this.scale_and_round(destination_point);
-            //contents = contents + this.line([source_point[0], -source_point[1]],
-            //    [destination_point[0], -destination_point[1]],  2, color, 0.4, true);
-
-            // arc
-            source_point      = [cartesian_solution[idx][0] + (radius * source_direction[0]),
-                cartesian_solution[idx][1] + (radius * source_direction[1])];
-            destination_point = [cartesian_solution[idx][0] + (radius * destination_direction[0]),
-                cartesian_solution[idx][1] + (radius * destination_direction[1]) ];
-
-            source_point   = this.scale_and_round(source_point);
-            destination_point   = this.scale_and_round(destination_point);
-            let angle = state.parameters[`angle_${idx + 1}`];
-            let sign = angle > 0 ? 0 : 1;
-            const path_description = `M ${source_point[0]},${-source_point[1]} a${radius * this.scale},${radius * this.scale} 0 0 ${sign} ${destination_point[0] - source_point[0]},${-destination_point[1] + source_point[1]}`
-            //contents = contents + `<path d="${path_description}" stroke-dasharray="4" fill="none" style="stroke-opacity:${0.4};stroke:${color};stroke-width:${2}" />`
-        }
-        return contents;
-    }
-
-    draw_reachability() {
-        let arm_len = this.robot_topology.l1 + this.robot_topology.l2 + this.robot_topology.l3;
-        let radius = arm_len * this.scale;
-        let source_point      = [0, 0];
-        source_point   = this.scale_and_round(source_point);
-        let contents = `<circle cx="${source_point[0]}" cy="${-source_point[1]}" r="${radius}" stroke="green" stroke-width="1" fill="None" />`;
-        return contents;
-    }
-
-    draw_linear(linear_1, color) {
-        const local_scale = (this.size / 2) / this.robot_topology.h1;
-        let origin_point = [this.size + 1, (this.size / 2) - (linear_1 * local_scale)];
-        let destination_point = [this.size + 30,  (this.size / 2) - (linear_1 * local_scale)];
-        console.log('destination_point', destination_point)
-        let contents = this.line(origin_point, destination_point, 2, color, 0.6, false);
-        return contents;
-    }
-
-    draw_angular_square() {
-        return `<rect fill="none" width="${this.size - 2}" height="${(this.size / 2) + 100}" style="stroke-width:1;stroke:rgb(0,0,0)" />`
-    }
-
-    draw_linear_square() {
-        return `<rect fill="none" x="${this.size}" y="0" width="30" height="${(this.size / 2) + 100}" style="stroke-width:1;stroke:rgb(0,0,0)" />`
-    }
-
-    draw_state(state, radius, color) {
-        let angular =  this.draw_angular(state, radius, color);
-        let linear = '';//this.draw_linear(state.parameters['linear_1'], color);
-        let angular_square = this.draw_angular_square();
-        let linear_square = this.draw_linear_square();
-        return angular + angular_square + linear + linear_square;
-    }
-
-    draw_tracker(tracker_state, dash_tracker) {
-        const dash_config = dash_tracker ? 'stroke-dasharray="4"' : '';
-        if(tracker_state != null) {
-
-            // central point
-            let radius = 5 * this.scale;
-            let source_point = this.scale_and_round([tracker_state.x, tracker_state.y]);
-            let position_circle = `<circle cx="${source_point[0]}" cy="${-source_point[1]}" r="${radius}" stroke="orange" stroke-width="1" fill="None" ${dash_config}/>`;
-
-            let stroke_width = 1;
-
-            // tangent line
-            let start_tangent = [tracker_state.x + (100 * tracker_state.dy),
-                tracker_state.y - (100 * tracker_state.dx)];
-            let end_tangent = [tracker_state.x - (100 * tracker_state.dy),
-                tracker_state.y + (100 * tracker_state.dx)];
-            start_tangent   = this.scale_and_round(start_tangent);
-            end_tangent   = this.scale_and_round(end_tangent);
-            let orientation_line_tangent = `<line x1="${start_tangent[0]}" y1="${-start_tangent[1]}"
-                    x2="${end_tangent[0]}" y2="${-end_tangent[1]}"
-                    style="stroke:green;stroke-width:${stroke_width}" ${dash_config}/>`
-
-            // orthogonal line
-            let start_orthogonal = [tracker_state.x + (100 * tracker_state.dx),
-                tracker_state.y + (100 * tracker_state.dy)];
-            let end_orthogonal = [tracker_state.x - (100 * tracker_state.dx),
-                tracker_state.y - (100 * tracker_state.dy)];
-            start_orthogonal   = this.scale_and_round(start_orthogonal);
-            end_orthogonal   = this.scale_and_round(end_orthogonal);
-            let orientation_line_orthogonal = `<line x1="${start_orthogonal[0]}" y1="${-start_orthogonal[1]}"
-                    x2="${end_orthogonal[0]}" y2="${-end_orthogonal[1]}"
-                    style="stroke:orange;stroke-width:${stroke_width}" ${dash_config}/>`
-
-            let linear = this.draw_linear(tracker_state.z, 'orange');
-            const contents = `${linear}
-                              ${position_circle}
-                              ${orientation_line_tangent}
-                              ${orientation_line_orthogonal}`;
-            return contents;
-        } else{
-            return '';
-        }
-    }
-
-    draw_states(target_state, current_state, tracker_state, dash_tracker) {
-        const kinematics_image = document.getElementById("kinematics");
-        const blue = 'rgb(0, 0, 255)';
-        const svg_current_state = robot_drawer.draw_state(current_state, 50, blue);
-        const red = 'rgb(255, 0, 0)';
-        const svg_target_state = robot_drawer.draw_state(target_state, 50, red);
-        const svg_reachability = robot_drawer.draw_reachability();
-        let svg_tracker = ''
-        if(tracker_state != null && tracker_state != undefined) {
-            svg_tracker = robot_drawer.draw_tracker(tracker_state.parameters, dash_tracker);
-        }
-        kinematics_image.innerHTML = `
-            <svg width="${robot_drawer.size + 100}px" height="${(robot_drawer.size / 2) + 120}px">
-                ${svg_current_state}
-                ${svg_target_state}
-                ${svg_reachability}
-                ${svg_tracker}
-            </svg>`;
-    };
-
-}
-
-const robot_drawer = new RobotDrawer(new RobotTopology(142.5, 142.5, 142.5 + 19.0, 290), 700);
 
 const setup_form = function(id_form_selector, endpoint, success) {
     $(id_form_selector).submit(function(event){
@@ -212,7 +104,7 @@ const to_degrees = function(rads) {
     return (rads * 180) / Math.PI;
 }
 
-const setup_controller_connection = function() {
+const setup_controller_connection = function(robot_state, robot_target) {
     const socket = io.connect( {transports: ['websocket']});
     socket.on('state_updated', function(data) {
         for (var state_type in data) {
@@ -239,18 +131,42 @@ const setup_controller_connection = function() {
         if(data.tracker_state != null && data.tracker_state != undefined) {
             //TODO: this is approximate, better to get precise state when tracker updates
             tracker_state = data.tracker_state;
-            robot_drawer.last_tracker_state = data.tracker_state
-            robot_drawer.draw_states(data.target_state, data.current_state,
-                tracker_state, false);
+            robot_state.draw(data.current_state, data.topology);
+            robot_target.draw(data.target_state, data.topology);
+            //robot_drawer.last_tracker_state = data.tracker_state
+            //robot_drawer.draw_states(data.topology, data.target_state, data.current_state,
+             //   tracker_state, false);
         } else {
-            robot_drawer.draw_states(data.target_state, data.current_state,
-                robot_drawer.last_tracker_state, true);
+            robot_state.draw(data.current_state, data.topology);
+            robot_target.draw(data.target_state, data.topology);
+            //robot_drawer.draw_states(data.topology, data.target_state, data.current_state,
+                //robot_drawer.last_tracker_state, true);
         }
     });
     socket.on('camera_updated', function(data) {
         const camera_image = document.getElementById("camera")
         camera_image.src= 'data:image/png;base64,' + data.camera_image;
     });
+};
+
+
+const setup_robot_view = function() {
+    let parent = document.getElementById("canvas_wrapper");
+    let canvas = document.getElementById("kinematics");
+    canvas.width = parent.offsetWidth - 20;
+    canvas.height = parent.offsetHeight - 20;
+    let engine = new BABYLON.Engine(canvas, true);
+    let scene = createScene(engine);
+    ComputeCameraView(canvas);
+    engine.runRenderLoop(function () {
+        scene.render();
+    });
+    window.addEventListener("resize", function () {
+        engine.resize();
+    });
+    let robot_state = new Robot(scene, 0, 0, 1);
+    let robot_target = new Robot(scene, 0, 1, 0);
+    return [robot_state, robot_target];
 };
 
 $(document).ready(function(){
@@ -262,5 +178,7 @@ $(document).ready(function(){
         $('#write_target_state_form input[name=linear_1]').val(data.linear_1);
         $('#info_target_state_write').html(data.solution_type);
     });
-    setup_controller_connection();
+    const [robot_state, robot_target] = setup_robot_view();
+    setup_controller_connection(robot_state, robot_target);
+
 });
