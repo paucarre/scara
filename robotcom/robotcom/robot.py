@@ -160,7 +160,7 @@ class RobotCommunication():
         self.home()
 
 if __name__ == '__main__':
-    '''
+
     robot_communication = RobotCommunication()
     robot_communication.setup()
     robot_communication.angular_joint_1_device.configure_controller(5000, 5000)
@@ -204,3 +204,4 @@ if __name__ == '__main__':
             else:
                 print('No IK solution')
     ik_controller.close()
+    '''

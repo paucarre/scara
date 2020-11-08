@@ -15,7 +15,7 @@ class LinearHomer : public Homer {
     int32_t total_steps;
     int32_t steps_to_middle;
   public:
-    bool rotate_clockwise = false;
+    bool rotate_clockwise = true;
     bool top_end_stop_is_on();
     bool bottom_end_stop_is_on();
     void loop(RotaryStepper &rotary_stepper);

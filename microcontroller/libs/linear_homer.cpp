@@ -11,7 +11,7 @@ bool LinearHomer::bottom_end_stop_is_on() {
 void LinearHomer::loop(RotaryStepper &rotary_stepper){
   if(homing_state == HomingState::HOMING_NOT_STARTED){
     rotary_stepper.enable(true);
-    rotate_clockwise = ! rotate_clockwise;
+    rotate_clockwise = true;
     rotary_stepper.apply_direction(rotate_clockwise);
     homing_state = HomingState::LINEAR_MOVE_UNITL_BOTTOM_END_STOP;
   }

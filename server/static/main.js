@@ -9,14 +9,14 @@ const ComputeCameraView = function (canvas) {
     camera.orthoBottom = -frustrum / 2;
 }
 
-const createScene = function (engine) {
+const createScene = function (engine, canvas) {
     let scene = new BABYLON.Scene(engine);
-    let camera = new BABYLON.UniversalCamera("Camera", new BABYLON.Vector3(0,0,-1), scene);
+    let camera = new BABYLON.FreeCamera("Camera", new BABYLON.Vector3(0,0,-1), scene);
+    camera.attachControl(canvas, true);
+    camera.inputs.addMouseWheel();
     camera.mode = BABYLON.Camera.ORTHOGRAPHIC_CAMERA;
     camera.position = new BABYLON.Vector3(0, 0, -100);
-    camera.inputs.addMouseWheel();
     camera.setTarget(BABYLON.Vector3.Zero());
-    camera.attachControl(true);
     camera.minZ = -10000;
     camera.maxZ = 10000;
     let light = new BABYLON.HemisphericLight("HemiLight", new BABYLON.Vector3(0, 0, -2), scene);
@@ -156,7 +156,7 @@ const setup_robot_view = function() {
     canvas.width = parent.offsetWidth - 20;
     canvas.height = parent.offsetHeight - 20;
     let engine = new BABYLON.Engine(canvas, true);
-    let scene = createScene(engine);
+    let scene = createScene(engine, canvas);
     ComputeCameraView(canvas);
     engine.runRenderLoop(function () {
         scene.render();

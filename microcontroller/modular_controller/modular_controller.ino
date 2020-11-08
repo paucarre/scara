@@ -78,7 +78,15 @@ void control( void * pvParameters ) {
         homer_is_initialized = true;
       }
       homer->loop(rotary_stepper);
-      auto update_homing_state = [&shared_data, &homer] () { shared_data.homing_state = homer->get_homing_state(); };
+      controller_data.homing_state = homer->get_homing_state();
+      if(controller_data.homing_state == HomingState::HOMING_FINISHED){
+        controller_data.actions.do_homing = false;
+        homer_is_initialized = false;
+      }
+      auto update_homing_state = [&shared_data, &controller_data] () { 
+        shared_data.homing_state = controller_data.homing_state;
+        shared_data.actions.do_homing = controller_data.actions.do_homing; 
+      };
       do_safely_sharing_data(update_homing_state);
     }
     if (controller_data.actions.do_configure) {
