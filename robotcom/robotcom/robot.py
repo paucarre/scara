@@ -153,6 +153,7 @@ class RobotCommunication():
         steps = self.parameters_to_steps(parameters)
         self.logger.debug(f'Moving to parameters: {parameters} using steps {steps}')
         self.move_to_steps(steps)
+        return steps
 
     def setup(self):
         self.open()

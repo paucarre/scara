@@ -8,12 +8,15 @@ from robotcom.robot import RobotCommunication
 from robotcom.robot_simulation import SimulationRobotCommunication
 import numpy as np
 import time
+from enum import Enum, auto
 from multiprocessing import Process, Queue
 import requests
 from threading import Thread
 import sys
 import traceback
 import math
+import struct
+import base64
 
 def get_robot_communication(is_real):
     if is_real:
@@ -60,25 +63,138 @@ def get_state_data(robot_forward_kinamatics, current_parameters, target_paramete
     }
     return data
 
+class StateEstimationRobotState(Enum):
+    INITIAL = auto()
+    MOVING_TO_RIGHT = auto()
+    MOVED_TO_RIGHT = auto()
+    MOVING_TO_LEFT = auto()
+    MOVED_TO_LEFT = auto()
+    MOVING_TO_TARGET = auto()
+    MOVED_TO_TARGET = auto()
+
+global estate_estimation_robot_state, target_steps, current_parameters
+estate_estimation_robot_state = StateEstimationRobotState.INITIAL
+target_steps = None
+
+def to_radians(degrees):
+    return degrees * np.pi / 180
+
+def encode_double(data):
+    data = bytearray(struct.pack("d", data))
+    data = base64.b64encode(data)
+    return data
+
+class StateEstimate():
+
+    def __init__(self, translation, direction):
+        self.translation = translation
+        self.direction = direction
+
+def request_state_estimate(parameters):
+    linear_1=encode_double(parameters[0])
+    angle_1=encode_double(parameters[1])
+    angle_2=encode_double(parameters[2])
+    angle_3=encode_double(parameters[3])
+    state = {
+            'linear_1': linear_1,
+            'angle_1': angle_1,
+            'angle_2': angle_2,
+            'angle_3': angle_3
+        }
+    endpoint = 'http://192.168.0.39:7000/message'
+    try:
+        response = requests.post(endpoint , json=state)
+        response = response.json()
+        if 'translation' in response:
+            translation = np.array(response['translation'])
+            translation[2] += 135 # safety guard
+            rotation = response['rotation']
+            approaching_direction = rotation @ np.array([1, 0, 0]).T
+            approaching_direction[2] = 0.
+            approaching_direction = approaching_direction / np.linalg.norm(approaching_direction)
+            translation = translation - (approaching_direction * 40)
+            print('\tTranslation', response['translation'])
+            print('\tAngle Z', response['angle_z'])
+            return StateEstimate(translation, approaching_direction)
+        return None
+    except Exception as error:
+        error = traceback.format_exc()
+        print(error)
+        print(f"Error trying to connect to '{endpoint}'")
+        return None
+    #thread = Thread(target=publish_data)
+    #thread.daemon = True
+    #thread.start()
+
+
+def inverse_kinematics(estate_estimate):
+    data = {
+        'x': estate_estimate.translation[0],
+        'y': estate_estimate.translation[1],
+        'z': estate_estimate.translation[2],
+        'dx': estate_estimate.direction[0],
+        'dy': estate_estimate.direction[1]
+    }
+    response = requests.post('http://localhost:8000/inverse_kinematics', json = data, verify = False)
+    if response.status_code == requests.codes.ok:
+        solution = response.json()
+        angle_solution = solution['angle_solution']
+        parameters = [ data['z'] ] + angle_solution
+        return parameters
+    else:
+        print('NO IK SOLUTION FOUND')
+        return None
+
 def control_loop(task_queue, robot_communication):
+    global estate_estimation_robot_state, target_steps, current_parameters
     endpoint='http://127.0.0.1:5000/state_updated'
     robot_topology = RobotTopology(l1=142, l2=142, l3=142, h1=30, angle_wide_1=180, angle_wide_2=180 + 90, angle_wide_3=180 + 90)
     robot_forward_kinamatics = RobotForwardKinematics(robot_topology)
     while(True):
-        current_parameters = robot_communication.steps_to_parameters(robot_communication.get_steps())
-        target_parameter = robot_communication.steps_to_parameters(robot_communication.get_target_steps())
-        state_data = get_state_data(robot_forward_kinamatics, RobotState(*current_parameters), RobotState(*target_parameter))
-        publish(state_data, endpoint)
-        if not task_queue.empty():
-            task = task_queue.get()
-            print('task', task)
-            if task['type'] == 'MOVE_TO_STEPS':
-                robot_communication.move_to_steps(task['steps'])
-            if task['type'] == 'MOVE_TO_PARAMETERS':
-                robot_communication.move_to_parameters(task['parameters'])
-            elif task['type'] == 'GET_STEPS':
-                steps = steps = robot_communication.get_steps()
-                message = { 'type': 'GET_STEPS_RESPONSE', 'steps': steps}
+        try:
+            current_steps = robot_communication.get_steps()
+            current_parameters = robot_communication.steps_to_parameters(current_steps)
+            target_parameter = robot_communication.steps_to_parameters(robot_communication.get_target_steps())
+            state_data = get_state_data(robot_forward_kinamatics, RobotState(*current_parameters), RobotState(*target_parameter))
+            publish(state_data, endpoint)
+            state_estimate = None
+            if estate_estimation_robot_state == StateEstimationRobotState.INITIAL:
+                target_steps = robot_communication.move_to_parameters([100., to_radians(81.1519), to_radians(343.5084), to_radians(0)])
+                estate_estimation_robot_state = StateEstimationRobotState.MOVING_TO_RIGHT
+            elif estate_estimation_robot_state == StateEstimationRobotState.MOVING_TO_RIGHT:
+                if current_steps == target_steps:
+                    estate_estimation_robot_state = StateEstimationRobotState.MOVED_TO_RIGHT
+                    state_estimate = request_state_estimate(current_parameters)
+            elif estate_estimation_robot_state == StateEstimationRobotState.MOVED_TO_RIGHT:
+                target_steps = robot_communication.move_to_parameters([100., to_radians(16.4916), to_radians(278.8481), to_radians(0)])
+                estate_estimation_robot_state = StateEstimationRobotState.MOVING_TO_LEFT
+            elif estate_estimation_robot_state == StateEstimationRobotState.MOVING_TO_LEFT:
+                if current_steps == target_steps:
+                    estate_estimation_robot_state = StateEstimationRobotState.INITIAL
+                    state_estimate = request_state_estimate(current_parameters)
+            elif estate_estimation_robot_state == StateEstimationRobotState.MOVING_TO_TARGET:
+                if current_steps == target_steps:
+                    estate_estimation_robot_state = StateEstimationRobotState.INITIAL
+                    state_estimate = request_state_estimate(current_parameters)
+            if estate_estimation_robot_state is not StateEstimationRobotState.MOVING_TO_TARGET and state_estimate is not None:
+                parameters = inverse_kinematics(state_estimate)
+                if parameters is not None:
+                    target_steps = robot_communication.move_to_parameters(parameters)
+                    estate_estimation_robot_state = StateEstimationRobotState.MOVING_TO_TARGET
+
+            if not task_queue.empty():
+                task = task_queue.get()
+                print('task', task)
+                if task['type'] == 'MOVE_TO_STEPS':
+                    robot_communication.move_to_steps(task['steps'])
+                if task['type'] == 'MOVE_TO_PARAMETERS':
+                    robot_communication.move_to_parameters(task['parameters'])
+                elif task['type'] == 'GET_STEPS':
+                    steps = steps = robot_communication.get_steps()
+                    message = { 'type': 'GET_STEPS_RESPONSE', 'steps': steps}
+        except Exception as error:
+            error = traceback.format_exc()
+            print('ERRROR!', error)
 
 def control(task_queue, robot_communication):
     control_process = Process(target=control_loop, args=(task_queue, robot_communication, ))

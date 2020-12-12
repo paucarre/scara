@@ -61,7 +61,7 @@ def inverse_kinematics():
         'dx': float(request.form['dx']),
         'dy': float(request.form['dy'])
     }
-    response = requests.post('http://localhost:7000/inverse_kinematics', json = data, verify = False)
+    response = requests.post('http://localhost:8000/inverse_kinematics', json = data, verify = False)
     if response.status_code == requests.codes.ok:
         solution = response.json()
         angle_solution = solution['angle_solution']
