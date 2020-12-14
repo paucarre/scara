@@ -79,10 +79,6 @@ target_steps = None
 def to_radians(degrees):
     return degrees * np.pi / 180
 
-def encode_double(data):
-    data = bytearray(struct.pack("d", data))
-    data = base64.b64encode(data)
-    return data
 
 class StateEstimate():
 
@@ -91,19 +87,10 @@ class StateEstimate():
         self.direction = direction
 
 def request_state_estimate(parameters):
-    linear_1=encode_double(parameters[0])
-    angle_1=encode_double(parameters[1])
-    angle_2=encode_double(parameters[2])
-    angle_3=encode_double(parameters[3])
-    state = {
-            'linear_1': linear_1,
-            'angle_1': angle_1,
-            'angle_2': angle_2,
-            'angle_3': angle_3
-        }
+    robot_state = RobotState(*parameters)
     endpoint = 'http://192.168.0.39:7000/message'
     try:
-        response = requests.post(endpoint , json=state)
+        response = requests.post(endpoint , json=robot_state.to_dictionary())
         response = response.json()
         if 'translation' in response:
             translation = np.array(response['translation'])
@@ -148,25 +135,27 @@ def inverse_kinematics(estate_estimate):
 def control_loop(task_queue, robot_communication):
     global estate_estimation_robot_state, target_steps, current_parameters
     endpoint='http://127.0.0.1:5000/state_updated'
-    robot_topology = RobotTopology(l1=142, l2=142, l3=142, h1=30, angle_wide_1=180, angle_wide_2=180 + 90, angle_wide_3=180 + 90)
+    robot_topology = RobotTopology(l1=142, l2=142, l3=142, h1=240, angle_wide_1=180, angle_wide_2=180 + 90, angle_wide_3=180 + 90)
     robot_forward_kinamatics = RobotForwardKinematics(robot_topology)
     while(True):
         try:
             current_steps = robot_communication.get_steps()
             current_parameters = robot_communication.steps_to_parameters(current_steps)
             target_parameter = robot_communication.steps_to_parameters(robot_communication.get_target_steps())
-            state_data = get_state_data(robot_forward_kinamatics, RobotState(*current_parameters), RobotState(*target_parameter))
+            state_data = get_state_data(robot_forward_kinamatics, \
+                RobotState.from_robot_parameters(*current_parameters), \
+                RobotState.from_robot_parameters(*target_parameter))
             publish(state_data, endpoint)
             state_estimate = None
             if estate_estimation_robot_state == StateEstimationRobotState.INITIAL:
-                target_steps = robot_communication.move_to_parameters([100., to_radians(81.1519), to_radians(343.5084), to_radians(0)])
+                target_steps = robot_communication.move_to_parameters([200., to_radians(30.9866), to_radians(116.6691), to_radians(0)])
                 estate_estimation_robot_state = StateEstimationRobotState.MOVING_TO_RIGHT
             elif estate_estimation_robot_state == StateEstimationRobotState.MOVING_TO_RIGHT:
                 if current_steps == target_steps:
                     estate_estimation_robot_state = StateEstimationRobotState.MOVED_TO_RIGHT
                     state_estimate = request_state_estimate(current_parameters)
             elif estate_estimation_robot_state == StateEstimationRobotState.MOVED_TO_RIGHT:
-                target_steps = robot_communication.move_to_parameters([100., to_radians(16.4916), to_radians(278.8481), to_radians(0)])
+                target_steps = robot_communication.move_to_parameters([200., to_radians(-30.9866), to_radians(-116.6691), to_radians(0)])
                 estate_estimation_robot_state = StateEstimationRobotState.MOVING_TO_LEFT
             elif estate_estimation_robot_state == StateEstimationRobotState.MOVING_TO_LEFT:
                 if current_steps == target_steps:
@@ -181,7 +170,6 @@ def control_loop(task_queue, robot_communication):
                 if parameters is not None:
                     target_steps = robot_communication.move_to_parameters(parameters)
                     estate_estimation_robot_state = StateEstimationRobotState.MOVING_TO_TARGET
-
             if not task_queue.empty():
                 task = task_queue.get()
                 print('task', task)

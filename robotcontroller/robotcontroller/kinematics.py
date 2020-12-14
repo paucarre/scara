@@ -18,11 +18,28 @@ class RobotTopology():
 
 class RobotState():
 
+    @staticmethod
+    def from_robot_parameters(linear_1, angle_1, angle_2, angle_3):
+        linear_1 = linear_1
+        angle_1 = angle_1
+        angle_2 = angle_2 - angle_1
+        angle_3 = angle_3 - angle_2
+        return RobotState(linear_1, angle_1, angle_2, angle_3)
+
+    @staticmethod
+    def from_dictionary(state_dictionary):
+        return RobotState( \
+                RobotState.decode_double(state_dictionary['linear_1']),
+                RobotState.decode_double(state_dictionary['angle_1']),
+                RobotState.decode_double(state_dictionary['angle_2']),
+                RobotState.decode_double(state_dictionary['angle_3'])
+            )
+
     def __init__(self, linear_1, angle_1, angle_2, angle_3):
         self.linear_1 = linear_1
         self.angle_1 = angle_1
-        self.angle_2 = angle_2 - angle_1
-        self.angle_3 = angle_3 - angle_2
+        self.angle_2 = angle_2
+        self.angle_3 = angle_3
 
     def to_theta_list(self):
         return np.array([self.linear_1, self.angle_1, self.angle_2, self.angle_3])
@@ -30,6 +47,30 @@ class RobotState():
     def __repr__(self):
         return str(self.__dict__)
 
+    @staticmethod
+    def encode_double(data):
+        data = base64.b64decode(data)
+        data = struct.unpack("d", data)[0]
+        return data
+
+    @staticmethod
+    def decode_double(data):
+        data = bytearray(struct.pack("d", data))
+        data = base64.b64encode(data)
+        return data
+
+    def to_dictionary(self):
+        linear_1 = RobotState.encode_double(self.linear_1)
+        angle_1  = RobotState.encode_double(self.angle_1)
+        angle_2  = RobotState.encode_double(self.angle_2)
+        angle_3  = RobotState.encode_double(self.angle_3)
+        state = {
+                'linear_1': linear_1,
+                'angle_1': angle_1,
+                'angle_2': angle_2,
+                'angle_3': angle_3
+            }
+        return state
 
 class RobotForwardKinematics():
 
@@ -109,7 +150,7 @@ class RobotForwardKinematics():
         self.end_effector_at_zero_position = self.compute_end_effector_at_zero_position()
 
         # zero configuration
-        robot_configuration = RobotState(0, 0, 0, 0)
+        robot_configuration = RobotState.from_robot_parameters(0, 0, 0, 0)
         transformation = self.get_transformation(robot_configuration)
         position = np.array([0, 0, 0, 1])
         transformed_position = transformation @ position
@@ -124,7 +165,7 @@ class RobotForwardKinematics():
         assert error < 1e-10
 
         # (20, 0, 0, 90) config
-        robot_configuration = RobotState(20, 0, 0, np.pi / 2)
+        robot_configuration = RobotState.from_robot_parameters(20, 0, 0, np.pi / 2)
         transformation = self.get_transformation(robot_configuration)
         position = np.array([0, 0, 0, 1])
         transformed_position = transformation @ position
@@ -139,7 +180,7 @@ class RobotForwardKinematics():
         assert error < 1e-10
 
         # (20, 0, 90, 90) config
-        robot_configuration = RobotState(20, 0, np.pi / 2, np.pi / 2 + np.pi / 2)
+        robot_configuration = RobotState.from_robot_parameters(20, 0, np.pi / 2, np.pi / 2 + np.pi / 2)
         transformation = self.get_transformation(robot_configuration)
         position = np.array([0, 0, 0, 1])
         transformed_position = transformation @ position
@@ -155,7 +196,7 @@ class RobotForwardKinematics():
 
         # (20, -90, 90, 90) config
         '''
-        robot_configuration = RobotState(20, -np.pi / 2, np.pi / 2 -np.pi / 2, np.pi / 2 + np.pi / 2)
+        robot_configuration = RobotState.from_robot_parameters(20, -np.pi / 2, np.pi / 2 -np.pi / 2, np.pi / 2 + np.pi / 2)
         transformation = self.get_transformation(robot_configuration)
         position = np.array([0, 0, 0, 1])
         transformed_position = transformation @ position
@@ -270,7 +311,7 @@ class TrackerForwardKinematics():
         self.end_effector_at_zero_position = original_end_effector_at_zero_position
 
 if __name__ == '__main__':
-    robot_configuration = RobotState(0, 0, 0, 0)
+    robot_configuration = RobotState.from_robot_parameters(0, 0, 0, 0)
     robot_topology = RobotTopology(l1=10, l2=10, l3=10, h1=30, angle_wide_1=180, angle_wide_2=180, angle_wide_3=180)
     forward_kinematics = RobotForwardKinematics(robot_topology)
     tracker_fordward_kinematics = TrackerForwardKinematics()
