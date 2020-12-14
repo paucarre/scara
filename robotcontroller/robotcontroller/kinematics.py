@@ -1,6 +1,9 @@
 import numpy as np
-import math
 import modern_robotics as mr
+
+import math
+import base64
+import struct
 
 class RobotTopology():
 
@@ -49,14 +52,14 @@ class RobotState():
 
     @staticmethod
     def encode_double(data):
-        data = base64.b64decode(data)
-        data = struct.unpack("d", data)[0]
+        data = bytearray(struct.pack("d", data))
+        data = base64.b64encode(data)
         return data
 
     @staticmethod
     def decode_double(data):
-        data = bytearray(struct.pack("d", data))
-        data = base64.b64encode(data)
+        data = base64.b64decode(data)
+        data = struct.unpack("d", data)[0]
         return data
 
     def to_dictionary(self):
