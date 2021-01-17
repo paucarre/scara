@@ -17,6 +17,7 @@ import traceback
 import math
 import struct
 import base64
+import time
 
 def get_robot_communication(is_real):
     if is_real:
@@ -87,19 +88,22 @@ class StateEstimate():
         self.direction = direction
 
 def request_state_estimate(parameters):
-    robot_state = RobotState(*parameters)
+    time.sleep(1)
+    robot_state = RobotState.from_robot_parameters(*parameters)
     endpoint = 'http://192.168.0.39:7000/message'
     try:
         response = requests.post(endpoint , json=robot_state.to_dictionary())
         response = response.json()
         if 'translation' in response:
             translation = np.array(response['translation'])
-            translation[2] += 135 # safety guard
+            print('translation', translation)
+            translation[2] += 100 # safety guard
+            translation[2] = 10
             rotation = response['rotation']
             approaching_direction = rotation @ np.array([1, 0, 0]).T
             approaching_direction[2] = 0.
             approaching_direction = approaching_direction / np.linalg.norm(approaching_direction)
-            translation = translation - (approaching_direction * 40)
+            translation = translation - (approaching_direction * 70)
             print('\tTranslation', response['translation'])
             print('\tAngle Z', response['angle_z'])
             return StateEstimate(translation, approaching_direction)
@@ -147,15 +151,16 @@ def control_loop(task_queue, robot_communication):
                 RobotState.from_robot_parameters(*target_parameter))
             publish(state_data, endpoint)
             state_estimate = None
+
             if estate_estimation_robot_state == StateEstimationRobotState.INITIAL:
-                target_steps = robot_communication.move_to_parameters([200., to_radians(30.9866), to_radians(116.6691), to_radians(0)])
+                target_steps = robot_communication.move_to_parameters([250., to_radians(86.7079), to_radians(49.9155), to_radians(315)])
                 estate_estimation_robot_state = StateEstimationRobotState.MOVING_TO_RIGHT
             elif estate_estimation_robot_state == StateEstimationRobotState.MOVING_TO_RIGHT:
                 if current_steps == target_steps:
                     estate_estimation_robot_state = StateEstimationRobotState.MOVED_TO_RIGHT
                     state_estimate = request_state_estimate(current_parameters)
             elif estate_estimation_robot_state == StateEstimationRobotState.MOVED_TO_RIGHT:
-                target_steps = robot_communication.move_to_parameters([200., to_radians(-30.9866), to_radians(-116.6691), to_radians(0)])
+                target_steps = robot_communication.move_to_parameters([250., to_radians(310.0845), to_radians(273.2921), to_radians(45)])
                 estate_estimation_robot_state = StateEstimationRobotState.MOVING_TO_LEFT
             elif estate_estimation_robot_state == StateEstimationRobotState.MOVING_TO_LEFT:
                 if current_steps == target_steps:
@@ -163,13 +168,14 @@ def control_loop(task_queue, robot_communication):
                     state_estimate = request_state_estimate(current_parameters)
             elif estate_estimation_robot_state == StateEstimationRobotState.MOVING_TO_TARGET:
                 if current_steps == target_steps:
-                    estate_estimation_robot_state = StateEstimationRobotState.INITIAL
                     state_estimate = request_state_estimate(current_parameters)
+                    estate_estimation_robot_state = StateEstimationRobotState.INITIAL
             if estate_estimation_robot_state is not StateEstimationRobotState.MOVING_TO_TARGET and state_estimate is not None:
                 parameters = inverse_kinematics(state_estimate)
                 if parameters is not None:
                     target_steps = robot_communication.move_to_parameters(parameters)
                     estate_estimation_robot_state = StateEstimationRobotState.MOVING_TO_TARGET
+
             if not task_queue.empty():
                 task = task_queue.get()
                 print('task', task)

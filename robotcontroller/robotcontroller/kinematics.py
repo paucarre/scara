@@ -23,11 +23,11 @@ class RobotState():
 
     @staticmethod
     def from_robot_parameters(linear_1, angle_1, angle_2, angle_3):
-        linear_1 = linear_1
-        angle_1 = angle_1
-        angle_2 = angle_2 - angle_1
-        angle_3 = angle_3 - angle_2
-        return RobotState(linear_1, angle_1, angle_2, angle_3)
+        linear_1_rectified = linear_1
+        angle_1_rectified = angle_1
+        angle_2_rectified = angle_2 - angle_1
+        angle_3_rectified = angle_3 - angle_2
+        return RobotState(linear_1_rectified, angle_1_rectified, angle_2_rectified, angle_3_rectified)
 
     @staticmethod
     def from_dictionary(state_dictionary):
