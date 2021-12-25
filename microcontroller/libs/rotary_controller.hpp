@@ -15,7 +15,7 @@ enum class RotaryControllerState {
 
 class RotaryController {
   private:
-    RotaryControllerState controller_state = RotaryControllerState.STOPPED;
+    RotaryControllerState controller_state = RotaryControllerState::STOPPED;
     int32_t current_step_to_target = 0;
     int32_t accelerating_steps = 0;
     int32_t maximum_speed_steps = 0;
@@ -33,15 +33,16 @@ class RotaryController {
 
     RotaryController():
       target_steps(0), minimum_steps(0), maximum_steps(0) {
-        set_error_constant(5000);
-        set_max_microseconds_delay(500);
+        // set_error_constant(5000);
+        // set_max_microseconds_delay(500);
     }
 
     void set_target_steps(int32_t target_steps_){
       target_steps = target_steps_;
+      /*
       initial_step = rotary_stepper.get_steps()
-      if (controller_state == RotaryControllerState.STOPPED) {
-        controller_state = RotaryControllerState.ACCELERATING;
+      if (controller_state == RotaryControllerState::STOPPED) {
+        controller_state = RotaryControllerState::ACCELERATING;
         int32_t diff_steps = abs(rotary_stepper.get_steps() - target_steps);
         if abs(diff_steps < 2 * accelerating_steps) {
           accelerating_steps = diff_steps / 2;
@@ -56,7 +57,7 @@ class RotaryController {
         } else {
           accelerating_steps = accelerating_steps_config / 2;
         }
-      }
+      }*/
     }
 
     int32_t get_minimum_steps(){
@@ -75,13 +76,13 @@ class RotaryController {
       maximum_steps = maximum_steps_;
     }
 
-    uint16_t get_error_constant() {
-      return error_constant;
-    }
+    //uint16_t get_error_constant() {
+    //  return error_constant;
+    //}
 
-    uint16_t get_max_microseconds_delay() {
-      return max_microseconds_delay;
-    }
+    //uint16_t get_max_microseconds_delay() {
+    // return max_microseconds_delay;
+    //}
 
     //void set_error_constant(uint16_t error_constant_) {
     //  error_constant = error_constant_;
@@ -115,8 +116,8 @@ class RotaryController {
       //float absolute_error = abs(error);
       //int microseconds = (int)(max_microseconds_delay_control * exp(-absolute_error * error_constant_control));
       if(error != 0){
-        if(controller_state == RotaryControllerState.STOPPED){
-          controller_state = RotaryControllerState.ACCELERATING;
+        if(controller_state == RotaryControllerState::STOPPED){
+          controller_state = RotaryControllerState::ACCELERATING;
         }
         if(current_step_to_target < accelerating_steps) {
           uint32_t delay_in_microseconds = (2. / minimum_speed_config) - ( current_step_to_target / ( minimum_speed_config * accelerating_steps) );
@@ -138,7 +139,7 @@ class RotaryController {
         rotary_stepper.apply_direction(true);
         rotary_stepper.step();
       } else {
-        controller_state = RotaryControllerState.STOPPED
+        controller_state = RotaryControllerState::STOPPED;
       }
     }
 

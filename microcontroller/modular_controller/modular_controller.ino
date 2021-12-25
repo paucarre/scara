@@ -54,8 +54,9 @@ void control( void * pvParameters ) {
       shared_data.configuration.step_pin = rotary_stepper.get_step_pin();
       shared_data.configuration.actuator_type = rotary_stepper.get_actuator_type();
       shared_data.actions.do_configure = false;
-      shared_data.control_configuration_data.error_constant = rotary_controller.get_error_constant();
-      shared_data.control_configuration_data.max_microseconds_delay = rotary_controller.get_max_microseconds_delay();
+      //TODO: remove this or support it again
+      shared_data.control_configuration_data.error_constant = 0.0; //rotary_controller.get_error_constant();
+      shared_data.control_configuration_data.max_microseconds_delay = 0.0; //rotary_controller.get_max_microseconds_delay();
       shared_data.control_configuration_data.minimum_steps = rotary_controller.get_minimum_steps();
       shared_data.control_configuration_data.maximum_steps = rotary_controller.get_maximum_steps();
   };
@@ -67,8 +68,9 @@ void control( void * pvParameters ) {
     TIMERG0.wdt_wprotect=0;
     auto pull_protocol_configuration = [&] () { controller_data = shared_data; };
     do_safely_sharing_data(pull_protocol_configuration);
-    rotary_controller.set_error_constant(controller_data.control_configuration_data.error_constant);
-    rotary_controller.set_max_microseconds_delay(controller_data.control_configuration_data.max_microseconds_delay);
+    //TODO: remove this or support it again
+    //rotary_controller.set_error_constant(controller_data.control_configuration_data.error_constant);
+    //rotary_controller.set_max_microseconds_delay(controller_data.control_configuration_data.max_microseconds_delay);
     rotary_controller.set_minimum_steps(controller_data.control_configuration_data.minimum_steps);
     rotary_controller.set_maximum_steps(controller_data.control_configuration_data.maximum_steps);
     if (controller_data.actions.do_homing) {
