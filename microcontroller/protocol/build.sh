@@ -1,5 +1,9 @@
+mkdir -p build
 cd build
-cmake ..  -DPYTHON_EXECUTABLE=$CONDA_PYTHON_EXE -DPYTHON_LIBRARY_DIR=${CONDA_PREFIX}/lib/python3.8/site-packages
+cmake .. \
+  -DPYTHON_INCLUDE_DIR=$(python3 -c "from distutils.sysconfig import get_python_inc; print(get_python_inc())")  \
+  -DPYTHON_LIBRARY_DIR=$(python3 -c "import distutils.sysconfig as sysconfig; print(sysconfig.get_config_var('LIBDIR'))") \
+  -DPYTHON_EXECUTABLE=$(which python3)
 make clean
 make
 ./tests
