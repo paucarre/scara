@@ -1,7 +1,7 @@
 import serial
 import protocol
 
-home_message = protocol.Message.make_home_message()
+home_message = protocol.Message.make_homing_message()
 parser = protocol.Parser()
 
 empty_message = b''
