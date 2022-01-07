@@ -29,7 +29,7 @@ struct ControlConfigurationData {
 
 struct SharedData {
   ActionsData  actions;
-  HomingState homing_state = HomingState::HOMING_NOT_STARTED;
+  HomingState homing_state = HomingState::HOMING_FINISHED;
   ConfigurationData configuration;
   ControlData control;
   ControlConfigurationData control_configuration_data;

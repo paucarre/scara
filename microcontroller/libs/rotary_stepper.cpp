@@ -29,6 +29,7 @@ void RotaryStepper::step() {
   delayMicroseconds(50);
   digitalWrite(this->step_pin, LOW);
   delayMicroseconds(50);
+  //Serial2.println(direction_pin_state_is_clockwise);
   if(direction_pin_state_is_clockwise){
     steps --;
   } else {
@@ -41,11 +42,12 @@ void RotaryStepper::enable(bool is_enabled) {
 }
 
 void RotaryStepper::configure(bool dir_high_is_clockwise_, uint16_t direction_pin_, uint16_t step_pin_, ActuatorType actuator_type_) {
-  this->dir_high_is_clockwise = dir_high_is_clockwise_;
-  this->direction_pin = direction_pin_;
-  this->step_pin = step_pin_;
-  this->actuator_type = actuator_type_;
+  dir_high_is_clockwise = dir_high_is_clockwise_;
+  direction_pin = direction_pin_;
+  step_pin = step_pin_;
+  actuator_type = actuator_type_;
   apply_direction(true);
+  setup();
 }
 
 uint16_t RotaryStepper::get_step_pin() {

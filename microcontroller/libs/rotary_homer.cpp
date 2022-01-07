@@ -39,8 +39,8 @@ void RotaryHomer::loop(RotaryStepper &rotary_stepper){
     homing_state = HomingState::ROTARY_MOVE_UNTIL_NO_SENSOR_READ;
   }
   if(homing_state != HomingState::HOMING_FINISHED){
-    int center_on = center_is_on();
-    check_end_stops(rotary_stepper);
+    int center_on = true;//center_is_on();
+    //check_end_stops(rotary_stepper);
     //Serial.println("rotary_homer - " + String(homing_state) + " | " + String(center_on));
     if(center_on) {
       if(homing_state == HomingState::ROTARY_FIND_FIRST_SENSOR_READ) {
@@ -75,7 +75,7 @@ void RotaryHomer::loop(RotaryStepper &rotary_stepper){
 }
 
 void RotaryHomer::setup(RotaryStepper &rotary_stepper) {
-  homing_state = HomingState::HOMING_NOT_STARTED;
+  homing_state = HomingState::HOMING_FINISHED;
   pinMode(center_magnetic_sensor_pin, INPUT);
   pinMode(left_magnetic_end_stop_pin  , INPUT);
   pinMode(right_magnetic_end_stop_pin , INPUT);

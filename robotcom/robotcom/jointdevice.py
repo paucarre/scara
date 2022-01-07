@@ -91,12 +91,16 @@ class JointDevice():
             return Failure(error)
 
     def configure(self):
-        configure_message = protocol.Message.make_configure_message(self.dir_high_is_clockwise, self.dir_pin, self.step_pin, self.homing_offset, self.actuator_type)
+        configure_message = protocol.Message.make_configure_message(
+            self.dir_high_is_clockwise, self.dir_pin, self.step_pin, self.homing_offset, self.actuator_type)
         configure_message_result = self._try_to_send_message(configure_message)
+        print("send config result: ", configure_message_result)
         configure_message_result = configure_message_result.bind(lambda message: \
             self._try_to_get_response(protocol.CONFIGURE_RESPONSE_MESSAGE_TYPE))
+        print("send config response", configure_message_result)
         configure_message_result = configure_message_result.map(lambda message: \
             message.get_data()).value_or(None)
+        print(configure_message_result)
         self.configure_min_max_steps(self.min_steps, self.max_steps)
         return configure_message_result
 
@@ -223,13 +227,11 @@ class JointDevice():
             (result[2] == self.step_pin) and \
             (protocol.Message.make_int16_from_two_bytes(result[3], result[4]) == self.homing_offset) and \
             (protocol.ActuatorType.from_index(result[5]) == self.actuator_type)
-        #print(self.actuator_type)
         result = self.configure()
-        #print(result)
         result = self.configure()
-        #print(result)
         while not is_finished(result):
             time.sleep(0.1)
+            self.logger.warn(f'Trying to configure joint device: {self}')
             result = self.get_configuration()
         return result
 
@@ -241,21 +243,30 @@ class JointDevice():
         elif target_steps < self.min_steps:
             target_steps = self.min_steps
         #print(result)
-        steps = self.get_steps()
-        #print(steps)
+        steps = self.get_steps()        
         while steps is None or steps != target_steps:
-            #print('target steps: ', self.get_target_steps())
+            print('target steps: ', self.get_target_steps())
             steps = self.get_steps()
+            print("STEPS: ", steps)
 
 
 if __name__ == '__main__':
     #joint = JointDevice('Linear 0', protocol.ActuatorType.LINEAR, '/dev/ttyS5', True, 27, 26, 0, 1000, 51000)
-    joint = JointDevice('Angular 3', protocol.ActuatorType.ROTARY, '/dev/ttyS10', False, 27, 26, -425, -26000, 26000)
-    joint.open()
-    joint.configure()
-    joint.home_until_finished()
-    #joint.configure_min_max_steps(1000, 51000)
-    #joint.move_to_target_until_is_reached(-26000)
+    joint = JointDevice('Angular 0', protocol.ActuatorType.ROTARY, '/dev/ttyUSB0', True, 15, 2, -425, -26000, 26000)
+    open_result = joint.open()
+    #joint.close()
+    #open_result = joint.open()
+    #print("Device opened: ", open_result )
+    configuration_result = joint.configure()
+    #configuration_result.map(lambda result: print(result.get_data()))
+    print("Device configuration: ", configuration_result)
+    homing_result = joint.home_until_finished()
+    print("Device homed: ", homing_result)
+    #max_min_steps = joint.configure_min_max_steps(1000, 51000)
+    #print("Device set to min and max steps", max_min_steps)
+    joint.move_to_target_until_is_reached(5000)
+    #print("Device homed")
     #joint.move_to_target_until_is_reached(+26000)
-    joint.move_to_target_until_is_reached(10000)
+    #joint.move_to_target_until_is_reached(10000)
     joint.close()
+    print("Device closed")

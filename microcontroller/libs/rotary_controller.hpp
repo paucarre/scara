@@ -98,9 +98,9 @@ class RotaryController {
       // error is 32 bit as difference of 32 bit values that are actually very close to 16 so they won't overflow
       if(maximum_steps > minimum_steps) {
         if(target_steps > maximum_steps){
-          target_steps = maximum_steps;
+          //target_steps = maximum_steps;
         } else if(target_steps < minimum_steps) {
-          target_steps = minimum_steps;
+          //target_steps = minimum_steps;
         }
       }
       _control(rotary_stepper);
@@ -108,6 +108,7 @@ class RotaryController {
 
     void _control(RotaryStepper& rotary_stepper) {
       int32_t current_steps = rotary_stepper.get_steps();
+
       int32_t initial_steps_to_target = abs(initial_step - target_steps);
       int32_t end_of_max_speed_steps = initial_steps_to_target - accelerating_steps;
       int32_t current_steps_to_target = abs(initial_step - target_steps);
@@ -121,13 +122,13 @@ class RotaryController {
         }
         if(current_step_to_target < accelerating_steps) {
           uint32_t delay_in_microseconds = (2. / minimum_speed_config) - ( current_step_to_target / ( minimum_speed_config * accelerating_steps) );
-          delayMicroseconds(delay_in_microseconds);
+          //delayMicroseconds(delay_in_microseconds);
         } else if (current_step_to_target >= accelerating_steps && current_step_to_target < end_of_max_speed_steps ) {
           uint32_t delay_in_microseconds = 1. / minimum_speed_config;
-          delayMicroseconds(delay_in_microseconds);
+          //delayMicroseconds(delay_in_microseconds);
         } else if (current_step_to_target >= end_of_max_speed_steps) {
           uint32_t delay_in_microseconds = ( current_step_to_target / ( minimum_speed_config * accelerating_steps) );
-          delayMicroseconds(delay_in_microseconds);
+          //delayMicroseconds(delay_in_microseconds);
         }
       }
       if(error < 0) {
@@ -141,6 +142,7 @@ class RotaryController {
       } else {
         controller_state = RotaryControllerState::STOPPED;
       }
+      
     }
 
 };

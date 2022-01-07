@@ -6,7 +6,7 @@ class Homer {
   protected:
     HomingState homing_state;
     int16_t homing_offset = 0;
-    Homer():homing_state(HomingState::HOMING_NOT_STARTED) {
+    Homer():homing_state(HomingState::HOMING_FINISHED) {
     }
   public:
     virtual void loop(RotaryStepper &rotary_stepper) = 0;

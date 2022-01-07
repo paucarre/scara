@@ -23,7 +23,8 @@ void do_safely_sharing_data(F &lambda) {
 }
 
 void setup() {
-  Serial.begin(9600); // NOTE: keep the same in host
+  Serial.begin(9600);
+  Serial2.begin(9600, SERIAL_8N1, 16, 17);
   mutex = xSemaphoreCreateMutex();
 
   xTaskCreatePinnedToCore(communication, "communication", 10000, NULL, 1, NULL,  1);
@@ -110,10 +111,11 @@ void control( void * pvParameters ) {
     int32_t steps = rotary_stepper.get_steps();
     auto update_steps = [&shared_data, &steps] () { shared_data.control.steps = steps; };
     do_safely_sharing_data(update_steps);
-    if(controller_data.homing_state == HomingState::HOMING_FINISHED) {
-      rotary_controller.set_target_steps(controller_data.control.target_steps);
-      rotary_controller.control(rotary_stepper);
-    }
+    //if(controller_data.homing_state == HomingState::HOMING_FINISHED) {
+    rotary_controller.set_target_steps(controller_data.control.target_steps);
+    //Serial2.println("Control Loop - control call");
+    rotary_controller.control(rotary_stepper);
+    //}
   }
 }
 
