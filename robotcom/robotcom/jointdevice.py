@@ -21,9 +21,11 @@ class ControllerMinmaxConfiguration():
 
 class ControllerConfiguration():
 
-    def __init__(self, error_constant, max_microseconds_delay):
-        self.error_constant = error_constant
-        self.max_microseconds_delay = max_microseconds_delay
+    def __init__(self, minimum_steps, maximum_steps, max_speed_steps_per_second, max_acceleration_steps_per_second_squared):
+        self.minimum_steps = minimum_steps
+        self.maximum_steps = maximum_steps
+        self.max_speed_steps_per_second = max_speed_steps_per_second
+        self.max_acceleration_steps_per_second_squared = max_acceleration_steps_per_second_squared
 
     def __repr__(self):
         return str(self)
@@ -33,7 +35,8 @@ class ControllerConfiguration():
 
 class JointDevice():
 
-    def __init__(self, label, actuator_type, serial_name, dir_high_is_clockwise, dir_pin, step_pin, homing_offset, min_steps, max_steps, baud_rate=9600):
+    def __init__(self, label, actuator_type, serial_name, dir_high_is_clockwise, dir_pin, step_pin, homing_offset, min_steps, max_steps, 
+            max_speed_steps_per_second, max_acceleration_steps_per_second_squared, baud_rate=9600):
         self.label = label
         self.parser = protocol.Parser()
         self.actuator_type = actuator_type
@@ -45,6 +48,8 @@ class JointDevice():
         self.homing_offset = homing_offset
         self.min_steps = min_steps
         self.max_steps = max_steps
+        self.max_speed_steps_per_second = max_speed_steps_per_second
+        self.max_acceleration_steps_per_second_squared = max_acceleration_steps_per_second_squared
 
         self.logger = logging.getLogger(f'{label} Axis')
         self.logger.setLevel(logging.DEBUG)
@@ -101,25 +106,41 @@ class JointDevice():
         configure_message_result = configure_message_result.map(lambda message: \
             message.get_data()).value_or(None)
         print(configure_message_result)
-        self.configure_min_max_steps(self.min_steps, self.max_steps)
+        self.configure_control_configuration(self.min_steps, self.max_steps,
+            self.max_speed_steps_per_second, self.max_acceleration_steps_per_second_squared)
         return configure_message_result
 
 
-    def configure_min_max_steps(self, minimum_steps, maximum_steps):
-        #"make_get_control_minmax_configuration_message", &protocol::Message::make_get_control_minmax_configuration_message)
-        #.def_static("make_set_control_minmax_configuration_message"
-        configure_message = protocol.Message.make_set_control_minmax_configuration_message(minimum_steps, maximum_steps)
+    def configure_control_configuration(self, minimum_steps, maximum_steps, max_speed_steps_per_second, max_acceleration_steps_per_second_squared):
+        configure_message = protocol.Message.make_set_control_configuration_message(minimum_steps, maximum_steps,
+            max_speed_steps_per_second, max_acceleration_steps_per_second_squared)
         configure_message_result = self._try_to_send_message(configure_message)
         configure_message_result = configure_message_result.bind(lambda message: \
-            self._try_to_get_response(protocol.SET_CONTROL_MINMAX_CONFIGURATION_RESPONSE_MESSAGE_TYPE))
+            self._try_to_get_response(protocol.SET_CONTROL_CONFIGURATION_RESPONSE_MESSAGE_TYPE))
         configure_message_result = configure_message_result.map(lambda message: \
             ControllerConfiguration ( \
                 protocol.Message.make_int32_from_four_bytes(message.get_data()[0], message.get_data()[1], message.get_data()[2], message.get_data()[3]),
                 protocol.Message.make_int32_from_four_bytes(message.get_data()[4], message.get_data()[5], message.get_data()[6], message.get_data()[7]),
+                protocol.Message.make_int32_from_four_bytes(message.get_data()[8], message.get_data()[9], message.get_data()[10], message.get_data()[11]),
+                protocol.Message.make_int32_from_four_bytes(message.get_data()[12], message.get_data()[13], message.get_data()[14], message.get_data()[15])
             )).value_or(None)
         return configure_message_result
 
+    def get_configure_control_configuration(self):
+        configure_message = protocol.Message.make_get_control_configuration_message()
+        configure_message_result = self._try_to_send_message(configure_message)
+        configure_message_result = configure_message_result.bind(lambda message: \
+            self._try_to_get_response(protocol.GET_CONTROL_CONFIGURATION_RESPONSE_MESSAGE_TYPE))
+        configure_message_result = configure_message_result.map(lambda message: \
+            ControllerConfiguration ( \
+                protocol.Message.make_int32_from_four_bytes(message.get_data()[0], message.get_data()[1], message.get_data()[2], message.get_data()[3]),
+                protocol.Message.make_int32_from_four_bytes(message.get_data()[4], message.get_data()[5], message.get_data()[6], message.get_data()[7]),
+                protocol.Message.make_int32_from_four_bytes(message.get_data()[8], message.get_data()[9], message.get_data()[10], message.get_data()[11]),
+                protocol.Message.make_int32_from_four_bytes(message.get_data()[12], message.get_data()[13], message.get_data()[14], message.get_data()[15])
+            )).value_or(None)
+        return configure_message_result
 
+    '''
     def configure_controller(self, error_constant, max_microseconds_delay):
         configure_message = protocol.Message.make_set_control_configuration_message(error_constant, max_microseconds_delay)
         configure_message_result = self._try_to_send_message(configure_message)
@@ -131,6 +152,7 @@ class JointDevice():
                 protocol.Message.make_uint16_from_two_bytes(message.get_data()[2], message.get_data()[3]),
             )).value_or(None)
         return configure_message_result
+    '''
 
     def get_controller_configuration(self):
         configure_message = protocol.Message.make_get_control_configuration_message()
@@ -155,7 +177,7 @@ class JointDevice():
         return result
 
     def home(self):
-        configure_result = self.configure_controller(5000, 500)
+        configure_result = self.configure_control_configuration(5000, 500, 10000, 50)
         home_message = protocol.Message.make_homing_message()
         home_result = self._try_to_send_message(home_message)
         home_result = home_result.bind(lambda message: \
@@ -252,19 +274,28 @@ class JointDevice():
 
 if __name__ == '__main__':
     #joint = JointDevice('Linear 0', protocol.ActuatorType.LINEAR, '/dev/ttyS5', True, 27, 26, 0, 1000, 51000)
-    joint = JointDevice('Angular 0', protocol.ActuatorType.ROTARY, '/dev/ttyUSB0', True, 15, 2, -425, -26000, 26000)
+    joint = JointDevice('Angular 0', protocol.ActuatorType.ROTARY, '/dev/ttyUSB0', 
+        True, 15, 2, -425, -26000, 26000, 1000000, 5)
     open_result = joint.open()
+    test = joint.get_configure_control_configuration()
+    print(test)
     #joint.close()
     #open_result = joint.open()
     #print("Device opened: ", open_result )
     configuration_result = joint.configure()
     #configuration_result.map(lambda result: print(result.get_data()))
-    print("Device configuration: ", configuration_result)
+    #print("Device configuration: ", configuration_result)
     homing_result = joint.home_until_finished()
     print("Device homed: ", homing_result)
     #max_min_steps = joint.configure_min_max_steps(1000, 51000)
     #print("Device set to min and max steps", max_min_steps)
-    joint.move_to_target_until_is_reached(5000)
+    result = joint.configure_control_configuration(joint.min_steps, joint.max_steps,
+        joint.max_speed_steps_per_second, joint.max_acceleration_steps_per_second_squared)
+    print(result)    
+    multi = 1
+    while True:
+        joint.move_to_target_until_is_reached(multi * 5000)
+        multi = multi * -1
     #print("Device homed")
     #joint.move_to_target_until_is_reached(+26000)
     #joint.move_to_target_until_is_reached(10000)

@@ -56,10 +56,10 @@ void control( void * pvParameters ) {
       shared_data.configuration.actuator_type = rotary_stepper.get_actuator_type();
       shared_data.actions.do_configure = false;
       //TODO: remove this or support it again
-      shared_data.control_configuration_data.error_constant = 0.0; //rotary_controller.get_error_constant();
-      shared_data.control_configuration_data.max_microseconds_delay = 0.0; //rotary_controller.get_max_microseconds_delay();
-      shared_data.control_configuration_data.minimum_steps = rotary_controller.get_minimum_steps();
-      shared_data.control_configuration_data.maximum_steps = rotary_controller.get_maximum_steps();
+      shared_data.control_configuration_data = rotary_controller.get_control_configuration_data();
+      //shared_data.control_configuration_data.max_microseconds_delay = 0.0; rotary_controller.get_max_microseconds_delay();
+      //shared_data.control_configuration_data.minimum_steps = rotary_controller.get_minimum_steps();
+      //shared_data.control_configuration_data.maximum_steps = rotary_controller.get_maximum_steps();
   };
   do_safely_sharing_data(init_configuration);
 
@@ -70,10 +70,10 @@ void control( void * pvParameters ) {
     auto pull_protocol_configuration = [&] () { controller_data = shared_data; };
     do_safely_sharing_data(pull_protocol_configuration);
     //TODO: remove this or support it again
-    //rotary_controller.set_error_constant(controller_data.control_configuration_data.error_constant);
+    rotary_controller.set_control_configuration_data(controller_data.control_configuration_data);
     //rotary_controller.set_max_microseconds_delay(controller_data.control_configuration_data.max_microseconds_delay);
-    rotary_controller.set_minimum_steps(controller_data.control_configuration_data.minimum_steps);
-    rotary_controller.set_maximum_steps(controller_data.control_configuration_data.maximum_steps);
+    //rotary_controller.set_minimum_steps(controller_data.control_configuration_data.minimum_steps);
+    //rotary_controller.set_maximum_steps(controller_data.control_configuration_data.maximum_steps);
     if (controller_data.actions.do_homing) {
       if(!homer_is_initialized){
         homer = &HomerBuilder::build_homer(rotary_stepper.get_actuator_type());
@@ -195,24 +195,34 @@ void communication( void * pvParameters ) {
           protocol::Message message_return = protocol::Message::make_get_configuration_response_message(dir_high_is_clockwise, direction_pin, step_pin, homing_offset, actuator_type);
           write_message(message_return);
         } else if (message.get_message_type() == protocol::SET_CONTROL_CONFIGURATION_MESSAGE_TYPE) {
-          uint16_t error_constant = protocol::Message::make_uint16_from_two_bytes(message.data[0], message.data[1]);
-          uint16_t max_microseconds_delay = protocol::Message::make_uint16_from_two_bytes(message.data[2], message.data[3]);
-          auto update_control_config = [&shared_data, &error_constant, &max_microseconds_delay] () {
-            shared_data.control_configuration_data.error_constant = error_constant;
-            shared_data.control_configuration_data.max_microseconds_delay = max_microseconds_delay;
+          int32_t minimum_steps = protocol::Message::make_int32_from_four_bytes(message.data[0], message.data[1], message.data[2], message.data[3]);
+          int32_t maximum_steps = protocol::Message::make_int32_from_four_bytes(message.data[4], message.data[5], message.data[6], message.data[7]);
+          uint32_t max_speed_steps_per_second = protocol::Message::make_int32_from_four_bytes(message.data[8], message.data[9], message.data[10], message.data[11]);
+          uint32_t max_acceleration_steps_per_second_squared = protocol::Message::make_int32_from_four_bytes(message.data[12], message.data[13], message.data[14], message.data[15]);
+          auto update_control_config = [&shared_data, &minimum_steps, &maximum_steps, &max_speed_steps_per_second, &max_acceleration_steps_per_second_squared] () {
+            shared_data.control_configuration_data.minimum_steps = minimum_steps;
+            shared_data.control_configuration_data.maximum_steps = maximum_steps;
+            shared_data.control_configuration_data.max_speed_steps_per_second = max_speed_steps_per_second;
+            shared_data.control_configuration_data.max_acceleration_steps_per_second_squared = max_acceleration_steps_per_second_squared;
           };
           do_safely_sharing_data(update_control_config);
-          protocol::Message message_return = protocol::Message::make_set_control_configuration_response_message(error_constant, max_microseconds_delay);
+          protocol::Message message_return = protocol::Message::make_set_control_configuration_response_message(minimum_steps, maximum_steps,
+            max_speed_steps_per_second, max_acceleration_steps_per_second_squared);
           write_message(message_return);
         } else if (message.get_message_type() == protocol::GET_CONTROL_CONFIGURATION_MESSAGE_TYPE) {
-          uint16_t error_constant = 0;
-          uint16_t max_microseconds_delay = 0;
-          auto get_control_config = [&shared_data, &error_constant, &max_microseconds_delay] () {
-            error_constant = shared_data.control_configuration_data.error_constant;
-            max_microseconds_delay = shared_data.control_configuration_data.max_microseconds_delay;
+          int32_t minimum_steps;
+          int32_t maximum_steps;
+          uint32_t max_speed_steps_per_second;
+          uint32_t max_acceleration_steps_per_second_squared;
+          auto get_control_config = [&shared_data, &minimum_steps, &maximum_steps, &max_speed_steps_per_second, &max_acceleration_steps_per_second_squared] () {
+            minimum_steps = shared_data.control_configuration_data.minimum_steps;
+            maximum_steps = shared_data.control_configuration_data.maximum_steps;
+            max_speed_steps_per_second = shared_data.control_configuration_data.max_speed_steps_per_second;
+            max_acceleration_steps_per_second_squared = shared_data.control_configuration_data.max_acceleration_steps_per_second_squared;
           };
           do_safely_sharing_data(get_control_config);
-          protocol::Message message_return = protocol::Message::make_get_control_configuration_response_message(error_constant, max_microseconds_delay);
+          protocol::Message message_return = protocol::Message::make_get_control_configuration_response_message(minimum_steps, maximum_steps,
+            max_speed_steps_per_second, max_acceleration_steps_per_second_squared);
           write_message(message_return);
         } else if (message.get_message_type() == protocol::SET_CONTROL_MINMAX_CONFIGURATION_MESSAGE_TYPE) {
           int32_t minimum_steps = protocol::Message::make_int32_from_four_bytes(message.data[0], message.data[1], message.data[2], message.data[3]);

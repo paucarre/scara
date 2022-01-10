@@ -67,10 +67,10 @@ namespace protocol {
     static MessageType SET_TARGET_STEPS_RESPONSE_MESSAGE_TYPE = MessageType(0x0A, 4);
     static MessageType GET_CONFIGURATION_MESSAGE_TYPE = MessageType(0x0B, 0);
     static MessageType GET_CONFIGURATION_RESPONSE_MESSAGE_TYPE = MessageType(0x0C, 6);
-    static MessageType SET_CONTROL_CONFIGURATION_MESSAGE_TYPE = MessageType(0x0D, 4);
-    static MessageType SET_CONTROL_CONFIGURATION_RESPONSE_MESSAGE_TYPE = MessageType(0x0E, 4);
+    static MessageType SET_CONTROL_CONFIGURATION_MESSAGE_TYPE = MessageType(0x0D, 16);
+    static MessageType SET_CONTROL_CONFIGURATION_RESPONSE_MESSAGE_TYPE = MessageType(0x0E, 16);
     static MessageType GET_CONTROL_CONFIGURATION_MESSAGE_TYPE = MessageType(0x0F, 0);
-    static MessageType GET_CONTROL_CONFIGURATION_RESPONSE_MESSAGE_TYPE = MessageType(0x10, 4);
+    static MessageType GET_CONTROL_CONFIGURATION_RESPONSE_MESSAGE_TYPE = MessageType(0x10, 16);
     static MessageType SET_CONTROL_MINMAX_CONFIGURATION_MESSAGE_TYPE = MessageType(0x11, 8);
     static MessageType SET_CONTROL_MINMAX_CONFIGURATION_RESPONSE_MESSAGE_TYPE = MessageType(0x12, 8);
     static MessageType GET_CONTROL_MINMAX_CONFIGURATION_MESSAGE_TYPE = MessageType(0x13, 0);
@@ -200,17 +200,27 @@ namespace protocol {
             }
 
 
-            static Message make_set_control_configuration_message(uint16_t error_constant, uint16_t max_microseconds_delay) {
-                char data[4] = { 0 } ;
-                fill_data_from_uint16(error_constant, data);
-                fill_data_from_uint16(max_microseconds_delay, data + 2);
+            static Message make_set_control_configuration_message(int32_t minimum_steps,
+                    int32_t maximum_steps,
+                    uint32_t max_speed_steps_per_second,
+                    uint32_t max_acceleration_steps_per_second_squared) {
+                char data[16] = { 0 } ;
+                fill_data_from_int32(minimum_steps, data);
+                fill_data_from_int32(maximum_steps, data + 4);
+                fill_data_from_uint32(max_speed_steps_per_second, data + 8);
+                fill_data_from_uint32(max_acceleration_steps_per_second_squared, data + 12);
                 return Message(SET_CONTROL_CONFIGURATION_MESSAGE_TYPE, data);
             }
 
-            static Message make_set_control_configuration_response_message(uint16_t error_constant, uint16_t max_microseconds_delay) {
-                char data[4] = { 0 } ;
-                fill_data_from_uint16(error_constant, data);
-                fill_data_from_uint16(max_microseconds_delay, data + 2);
+            static Message make_set_control_configuration_response_message(int32_t minimum_steps,
+                    int32_t maximum_steps,
+                    uint32_t max_speed_steps_per_second,
+                    uint32_t max_acceleration_steps_per_second_squared) {
+                char data[16] = { 0 } ;
+                fill_data_from_int32(minimum_steps, data);
+                fill_data_from_int32(maximum_steps, data + 4);
+                fill_data_from_uint32(max_speed_steps_per_second, data + 8);
+                fill_data_from_uint32(max_acceleration_steps_per_second_squared, data + 12);
                 return Message(SET_CONTROL_CONFIGURATION_RESPONSE_MESSAGE_TYPE, data);
             }
 
@@ -219,10 +229,16 @@ namespace protocol {
                 return Message(GET_CONTROL_CONFIGURATION_MESSAGE_TYPE, data);
             }
 
-            static Message make_get_control_configuration_response_message(uint16_t error_constant, uint16_t max_microseconds_delay) {
-                char data[4] = { 0 } ;
-                fill_data_from_uint16(error_constant, data);
-                fill_data_from_uint16(max_microseconds_delay, data + 2);
+            static Message make_get_control_configuration_response_message(
+                    int32_t minimum_steps,
+                    int32_t maximum_steps,
+                    uint32_t max_speed_steps_per_second,
+                    uint32_t max_acceleration_steps_per_second_squared) {
+                char data[16] = { 0 } ;
+                fill_data_from_int32(minimum_steps, data);
+                fill_data_from_int32(maximum_steps, data + 4);
+                fill_data_from_uint32(max_speed_steps_per_second, data + 8);
+                fill_data_from_uint32(max_acceleration_steps_per_second_squared, data + 12);
                 return Message(GET_CONTROL_CONFIGURATION_RESPONSE_MESSAGE_TYPE, data);
             }
 
@@ -253,6 +269,13 @@ namespace protocol {
             }
 
             static void fill_data_from_int32(int32_t value, char* data){
+                    data[0] = (char)(0x000000FF & ((value & 0xFF000000) >> 24));
+                    data[1] = (char)(0x000000FF & ((value & 0x00FF0000) >> 16));
+                    data[2] = (char)(0x000000FF & ((value & 0x0000FF00) >>  8));
+                    data[3] = (char)(value & 0x000000FF);
+            }
+
+            static void fill_data_from_uint32(uint32_t value, char* data){
                     data[0] = (char)(0x000000FF & ((value & 0xFF000000) >> 24));
                     data[1] = (char)(0x000000FF & ((value & 0x00FF0000) >> 16));
                     data[2] = (char)(0x000000FF & ((value & 0x0000FF00) >>  8));

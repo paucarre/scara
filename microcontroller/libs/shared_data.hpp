@@ -21,10 +21,10 @@ struct ControlData {
 };
 
 struct ControlConfigurationData {
-  uint16_t error_constant = 0;
-  uint16_t max_microseconds_delay = 0;
-  int32_t minimum_steps = 0;
-  int32_t maximum_steps = 0;
+  int32_t minimum_steps;
+  int32_t maximum_steps;
+  uint32_t max_speed_steps_per_second;
+  uint32_t max_acceleration_steps_per_second_squared;
 };
 
 struct SharedData {
