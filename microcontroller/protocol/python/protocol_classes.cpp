@@ -99,7 +99,8 @@ void init_protocol(py::module &m) {
           .def_static("make_set_control_configuration_message", &protocol::Message::make_set_control_configuration_message)
           .def_static("make_get_control_minmax_configuration_message", &protocol::Message::make_get_control_minmax_configuration_message)
           .def_static("make_set_control_minmax_configuration_message", &protocol::Message::make_set_control_minmax_configuration_message)
-          .def_static("make_get_target_steps_message", &protocol::Message::make_get_target_steps_message);
+          .def_static("make_get_target_steps_message", &protocol::Message::make_get_target_steps_message)
+          .def_static("make_set_servo_angle_message", &protocol::Message::make_set_servo_angle_message);
 
      py::class_<protocol::Parser>(m, "Parser")
           .def(py::init<>())
@@ -137,5 +138,7 @@ void init_protocol(py::module &m) {
      m.attr("GET_CONTROL_MINMAX_CONFIGURATION_RESPONSE_MESSAGE_TYPE") = py::cast(protocol::GET_CONTROL_MINMAX_CONFIGURATION_RESPONSE_MESSAGE_TYPE);
      m.attr("GET_TARGET_STEPS_MESSAGE_TYPE") = py::cast(protocol::GET_TARGET_STEPS_MESSAGE_TYPE);
      m.attr("GET_TARGET_STEPS_RESPONSE_MESSAGE_TYPE") = py::cast(protocol::GET_TARGET_STEPS_RESPONSE_MESSAGE_TYPE);
+     m.attr("SET_SERVO_ANGLE_MESSAGE_TYPE") = py::cast(protocol::SET_SERVO_ANGLE_MESSAGE_TYPE);
+     m.attr("SET_SERVO_ANGLE_RESPONSE_MESSAGE_TYPE") = py::cast(protocol::SET_SERVO_ANGLE_RESPONSE_MESSAGE_TYPE);
 
 }

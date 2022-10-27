@@ -5,6 +5,7 @@
 #include "shared_data.hpp"
 #include "protocol.hpp"
 #include "homer_builder.hpp"
+#include "servo_controller.hpp"
 
 
 #include "soc/timer_group_struct.h"
@@ -43,6 +44,7 @@ void write_message(protocol::Message message) {
 
 
 void control( void * pvParameters ) {
+  ServoController servo_controller;
   Homer* homer = &HomerBuilder::build_homer(ActuatorType::ROTARY);
   SharedData controller_data;
   RotaryStepper rotary_stepper(false, 27, 26, 25, ActuatorType::ROTARY);
@@ -86,9 +88,9 @@ void control( void * pvParameters ) {
         controller_data.actions.do_homing = false;
         homer_is_initialized = false;
       }
-      auto update_homing_state = [&shared_data, &controller_data] () { 
+      auto update_homing_state = [&shared_data, &controller_data] () {
         shared_data.homing_state = controller_data.homing_state;
-        shared_data.actions.do_homing = controller_data.actions.do_homing; 
+        shared_data.actions.do_homing = controller_data.actions.do_homing;
       };
       do_safely_sharing_data(update_homing_state);
     }
@@ -116,6 +118,7 @@ void control( void * pvParameters ) {
     //Serial2.println("Control Loop - control call");
     rotary_controller.control(rotary_stepper);
     //}
+    servo_controller.set_angle(controller_data.servo_control_data.angle);
   }
 }
 
@@ -243,6 +246,14 @@ void communication( void * pvParameters ) {
           };
           do_safely_sharing_data(get_control_config);
           protocol::Message message_return = protocol::Message::make_get_control_minmax_configuration_response_message(minimum_steps, maximum_steps);
+          write_message(message_return);
+        } else if (message.get_message_type() == protocol::SET_SERVO_ANGLE_MESSAGE_TYPE) {
+          int16_t servo_angle = protocol::Message::make_int16_from_two_bytes(message.data[0], message.data[1]);
+          auto update_servo_angle = [&shared_data, &servo_angle] () {
+            shared_data.servo_control_data.angle = servo_angle;
+          };
+          do_safely_sharing_data(update_servo_angle);
+          protocol::Message message_return = protocol::Message::make_set_servo_angle_response_message(servo_angle);
           write_message(message_return);
         }
 

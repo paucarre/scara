@@ -77,10 +77,12 @@ namespace protocol {
     static MessageType GET_CONTROL_MINMAX_CONFIGURATION_RESPONSE_MESSAGE_TYPE = MessageType(0x14, 8);
     static MessageType GET_TARGET_STEPS_MESSAGE_TYPE = MessageType(0x15, 0);
     static MessageType GET_TARGET_STEPS_RESPONSE_MESSAGE_TYPE = MessageType(0x16, 4);
+    static MessageType SET_SERVO_ANGLE_MESSAGE_TYPE = MessageType(0x17, 2);
+    static MessageType SET_SERVO_ANGLE_RESPONSE_MESSAGE_TYPE = MessageType(0x18, 2);
 
 
     static MessageType UNDEFINED_MESSAGE_TYPE = MessageType(0xCC, 0);
-    static const uint8_t NUMBER_OF_MESSAGES = 22;
+    static const uint8_t NUMBER_OF_MESSAGES = 24;
     static MessageType MESSAGES[NUMBER_OF_MESSAGES] = {
         HOME_MESSAGE_TYPE, HOME_RESPONSE_MESSAGE_TYPE,
         CONFIGURE_MESSAGE_TYPE, CONFIGURE_RESPONSE_MESSAGE_TYPE,
@@ -92,7 +94,8 @@ namespace protocol {
         GET_CONTROL_CONFIGURATION_MESSAGE_TYPE, GET_CONTROL_CONFIGURATION_RESPONSE_MESSAGE_TYPE,
         SET_CONTROL_MINMAX_CONFIGURATION_MESSAGE_TYPE, SET_CONTROL_MINMAX_CONFIGURATION_RESPONSE_MESSAGE_TYPE,
         GET_CONTROL_MINMAX_CONFIGURATION_MESSAGE_TYPE, GET_CONTROL_MINMAX_CONFIGURATION_RESPONSE_MESSAGE_TYPE,
-        GET_TARGET_STEPS_MESSAGE_TYPE, GET_TARGET_STEPS_RESPONSE_MESSAGE_TYPE
+        GET_TARGET_STEPS_MESSAGE_TYPE, GET_TARGET_STEPS_RESPONSE_MESSAGE_TYPE,
+        SET_SERVO_ANGLE_MESSAGE_TYPE, SET_SERVO_ANGLE_RESPONSE_MESSAGE_TYPE
         };
 
     class Message {
@@ -188,6 +191,17 @@ namespace protocol {
                 return Message(GET_TARGET_STEPS_RESPONSE_MESSAGE_TYPE, data);
             }
 
+            static Message make_set_servo_angle_message(int16_t servo_angle) {
+                char data[2] = { 0 };
+                fill_data_from_int32(servo_angle, data);
+                return Message(SET_SERVO_ANGLE_MESSAGE_TYPE, data);
+            }
+
+            static Message make_set_servo_angle_response_message(int16_t servo_angle) {
+                char data[2] = { 0 };
+                fill_data_from_int32(servo_angle, data);
+                return Message(SET_SERVO_ANGLE_RESPONSE_MESSAGE_TYPE, data);
+            }
 
             static Message make_get_configuration_message() {
                 const char data[0] = { };

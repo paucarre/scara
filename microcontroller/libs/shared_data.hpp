@@ -27,10 +27,15 @@ struct ControlConfigurationData {
   uint32_t max_acceleration_steps_per_second_squared;
 };
 
+struct ServoControlData {
+  int16_t angle;
+};
+
 struct SharedData {
   ActionsData  actions;
   HomingState homing_state = HomingState::HOMING_FINISHED;
   ConfigurationData configuration;
   ControlData control;
   ControlConfigurationData control_configuration_data;
+  ServoControlData servo_control_data;
 };
