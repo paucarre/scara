@@ -77,8 +77,8 @@ namespace protocol {
     static MessageType GET_CONTROL_MINMAX_CONFIGURATION_RESPONSE_MESSAGE_TYPE = MessageType(0x14, 8);
     static MessageType GET_TARGET_STEPS_MESSAGE_TYPE = MessageType(0x15, 0);
     static MessageType GET_TARGET_STEPS_RESPONSE_MESSAGE_TYPE = MessageType(0x16, 4);
-    static MessageType SET_SERVO_ANGLE_MESSAGE_TYPE = MessageType(0x17, 2);
-    static MessageType SET_SERVO_ANGLE_RESPONSE_MESSAGE_TYPE = MessageType(0x18, 2);
+    static MessageType SET_SERVO_DUTY_MESSAGE_TYPE = MessageType(0x17, 4);
+    static MessageType SET_SERVO_DUTY_RESPONSE_MESSAGE_TYPE = MessageType(0x18, 4);
 
 
     static MessageType UNDEFINED_MESSAGE_TYPE = MessageType(0xCC, 0);
@@ -95,7 +95,7 @@ namespace protocol {
         SET_CONTROL_MINMAX_CONFIGURATION_MESSAGE_TYPE, SET_CONTROL_MINMAX_CONFIGURATION_RESPONSE_MESSAGE_TYPE,
         GET_CONTROL_MINMAX_CONFIGURATION_MESSAGE_TYPE, GET_CONTROL_MINMAX_CONFIGURATION_RESPONSE_MESSAGE_TYPE,
         GET_TARGET_STEPS_MESSAGE_TYPE, GET_TARGET_STEPS_RESPONSE_MESSAGE_TYPE,
-        SET_SERVO_ANGLE_MESSAGE_TYPE, SET_SERVO_ANGLE_RESPONSE_MESSAGE_TYPE
+        SET_SERVO_DUTY_MESSAGE_TYPE, SET_SERVO_DUTY_RESPONSE_MESSAGE_TYPE
         };
 
     class Message {
@@ -191,16 +191,16 @@ namespace protocol {
                 return Message(GET_TARGET_STEPS_RESPONSE_MESSAGE_TYPE, data);
             }
 
-            static Message make_set_servo_angle_message(int16_t servo_angle) {
-                char data[2] = { 0 };
-                fill_data_from_int32(servo_angle, data);
-                return Message(SET_SERVO_ANGLE_MESSAGE_TYPE, data);
+            static Message make_set_servo_duty_message(uint32_t duty) {
+                char data[4] = { 0 };
+                fill_data_from_uint32(duty, data);
+                return Message(SET_SERVO_DUTY_MESSAGE_TYPE, data);
             }
 
-            static Message make_set_servo_angle_response_message(int16_t servo_angle) {
-                char data[2] = { 0 };
-                fill_data_from_int32(servo_angle, data);
-                return Message(SET_SERVO_ANGLE_RESPONSE_MESSAGE_TYPE, data);
+            static Message make_set_servo_duty_response_message(uint32_t duty) {
+                char data[4] = { 0 };
+                fill_data_from_uint32(duty, data);
+                return Message(SET_SERVO_DUTY_RESPONSE_MESSAGE_TYPE, data);
             }
 
             static Message make_get_configuration_message() {
@@ -298,6 +298,11 @@ namespace protocol {
 
             static int32_t make_int32_from_four_bytes(uint8_t byte_1, uint8_t byte_2, uint8_t byte_3, uint8_t byte_4) {
                 const int32_t data  = ((byte_1 << 24) & 0xFF000000) + ((byte_2 << 16) & 0x00FF0000) + ((byte_3 << 8) & 0x0000FF00) + (byte_4 & 0x000000FF);
+                return data;
+            }
+
+            static uint32_t make_uint32_from_four_bytes(uint8_t byte_1, uint8_t byte_2, uint8_t byte_3, uint8_t byte_4) {
+                const uint32_t data  = ((byte_1 << 24) & 0xFF000000) + ((byte_2 << 16) & 0x00FF0000) + ((byte_3 << 8) & 0x0000FF00) + (byte_4 & 0x000000FF);
                 return data;
             }
 

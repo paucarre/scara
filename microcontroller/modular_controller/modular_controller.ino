@@ -45,6 +45,7 @@ void write_message(protocol::Message message) {
 
 void control( void * pvParameters ) {
   ServoController servo_controller;
+  servo_controller.setup();
   Homer* homer = &HomerBuilder::build_homer(ActuatorType::ROTARY);
   SharedData controller_data;
   RotaryStepper rotary_stepper(false, 27, 26, 25, ActuatorType::ROTARY);
@@ -71,6 +72,7 @@ void control( void * pvParameters ) {
     TIMERG0.wdt_wprotect=0;
     auto pull_protocol_configuration = [&] () { controller_data = shared_data; };
     do_safely_sharing_data(pull_protocol_configuration);
+    servo_controller.set_duty(controller_data.servo_control_data.duty);
     //TODO: remove this or support it again
     rotary_controller.set_control_configuration_data(controller_data.control_configuration_data);
     //rotary_controller.set_max_microseconds_delay(controller_data.control_configuration_data.max_microseconds_delay);
@@ -118,7 +120,6 @@ void control( void * pvParameters ) {
     //Serial2.println("Control Loop - control call");
     rotary_controller.control(rotary_stepper);
     //}
-    servo_controller.set_angle(controller_data.servo_control_data.angle);
   }
 }
 
@@ -247,13 +248,13 @@ void communication( void * pvParameters ) {
           do_safely_sharing_data(get_control_config);
           protocol::Message message_return = protocol::Message::make_get_control_minmax_configuration_response_message(minimum_steps, maximum_steps);
           write_message(message_return);
-        } else if (message.get_message_type() == protocol::SET_SERVO_ANGLE_MESSAGE_TYPE) {
-          int16_t servo_angle = protocol::Message::make_int16_from_two_bytes(message.data[0], message.data[1]);
-          auto update_servo_angle = [&shared_data, &servo_angle] () {
-            shared_data.servo_control_data.angle = servo_angle;
+        } else if (message.get_message_type() == protocol::SET_SERVO_DUTY_MESSAGE_TYPE) {
+          uint32_t servo_duty = protocol::Message::make_uint32_from_four_bytes(message.data[0], message.data[1], message.data[2], message.data[3]);
+          auto update_servo_duty = [&shared_data, &servo_duty] () {
+            shared_data.servo_control_data.duty = servo_duty;
           };
-          do_safely_sharing_data(update_servo_angle);
-          protocol::Message message_return = protocol::Message::make_set_servo_angle_response_message(servo_angle);
+          do_safely_sharing_data(update_servo_duty);
+          protocol::Message message_return = protocol::Message::make_set_servo_duty_response_message(servo_duty);
           write_message(message_return);
         }
 

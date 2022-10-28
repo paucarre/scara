@@ -28,7 +28,7 @@ struct ControlConfigurationData {
 };
 
 struct ServoControlData {
-  int16_t angle;
+  uint32_t duty;
 };
 
 struct SharedData {
